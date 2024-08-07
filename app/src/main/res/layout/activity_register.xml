@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:id="@+id/main"
     android:layout_height="match_parent"
     tools:context=".Register">
 
@@ -56,7 +57,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/edt_password"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="20dp"
         android:background="@drawable/btn_background"
         android:text="REGISTER"
         android:textColor="@color/white"

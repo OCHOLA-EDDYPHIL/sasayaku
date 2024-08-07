@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "574496203567",
+    "project_id": "tubonge-30cad",
+    "storage_bucket": "tubonge-30cad.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574496203567:android:023d27f0d2040b9a1177da",
+        "android_client_info": {
+          "package_name": "com.example.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgI4AqtnuDDVxbMV3yGyiMUE8tqwNxAKw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
