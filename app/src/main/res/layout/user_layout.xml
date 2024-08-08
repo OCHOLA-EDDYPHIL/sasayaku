@@ -5,7 +5,8 @@
 
 
     <TextView
-        android:id="@+id/tv_name"
+        android:layout_marginTop="5dp"
+        android:id="@+id/txt_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="abbay"
@@ -13,6 +14,8 @@
         android:textSize="30sp"
         android:layout_marginLeft="10dp"/>
     <View
+        android:layout_below="@+id/txt_name"
+        android:layout_marginTop="5dp"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/black"

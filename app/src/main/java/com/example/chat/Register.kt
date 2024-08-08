@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
 class Register : AppCompatActivity() {
 
@@ -18,6 +20,7 @@ class Register : AppCompatActivity() {
     private lateinit var edtPassword: EditText
     private lateinit var btnRegister: Button
     private lateinit var auth: FirebaseAuth
+    private lateinit var mDbRef: DatabaseReference
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,10 +38,11 @@ class Register : AppCompatActivity() {
         btnRegister = findViewById(R.id.btnRegister)
 
         btnRegister.setOnClickListener {
-            var email = edtEmail.text.toString()
-            var password = edtPassword.text.toString()
+            val name = edtName.text.toString()
+            val email = edtEmail.text.toString()
+            val password = edtPassword.text.toString()
 
-            register(email, password)
+            register(name, email, password)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -48,21 +52,26 @@ class Register : AppCompatActivity() {
         }
     }
 
-    private fun register(email: String, password: String){
+    private fun register(name: String, email: String, password: String){
         // Logic of creating a user
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Code for jumping to home activity
-
-                    var intent = Intent(this@Register, MainActivity::class.java)
+                    addUserToDatabase(name, email, auth.currentUser?.uid!!)
+                    val intent = Intent(this@Register, MainActivity::class.java)
                     startActivity(intent)
 
 
                 } else {
-                    // If sign in fails, display a message to the user.
+                    // If registration fails, display a message to the user.
                     Toast.makeText(this@Register, "Some error occurred", Toast.LENGTH_SHORT).show()
                 }
             }
+    }
+    private fun addUserToDatabase(name: String, email: String, uid: String){
+        mDbRef = FirebaseDatabase.getInstance().getReference()
+
+        mDbRef.child("user").child(uid).setValue(User(name, email, uid))
     }
 }
