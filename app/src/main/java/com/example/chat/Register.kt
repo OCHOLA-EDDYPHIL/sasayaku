@@ -60,6 +60,7 @@ class Register : AppCompatActivity() {
                     // Code for jumping to home activity
                     addUserToDatabase(name, email, auth.currentUser?.uid!!)
                     val intent = Intent(this@Register, MainActivity::class.java)
+                    finish()
                     startActivity(intent)
 
 
