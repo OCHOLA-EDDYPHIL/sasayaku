@@ -7,11 +7,20 @@
     android:layout_height="match_parent"
     tools:context=".ChatActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:theme="?attr/actionBarTheme"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chatRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_alignParentTop="true"
+        android:layout_below="@+id/toolbar"
         android:layout_above="@+id/linearLayout"
         android:padding="10dp"/>
 

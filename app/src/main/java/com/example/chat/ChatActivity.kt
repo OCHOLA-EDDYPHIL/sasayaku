@@ -1,11 +1,11 @@
 package com.example.chat
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,7 +27,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var mDbRef: DatabaseReference
 
     var receiverRoom: String? = null
-    var senderRoom: String? =null
+    var senderRoom: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,7 +43,14 @@ class ChatActivity : AppCompatActivity() {
         senderRoom = receiverUid + senderUid
         receiverRoom = senderUid + receiverUid
 
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = name
+
+        toolbar.setNavigationOnClickListener {
+            onBackPressed()
+        }
 
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageBox = findViewById(R.id.messageBox)
@@ -56,12 +63,10 @@ class ChatActivity : AppCompatActivity() {
 
         // logic for adding data to the recyclerview
         mDbRef.child("chats").child(senderRoom!!).child("messages")
-            .addValueEventListener(object: ValueEventListener{
+            .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-
                     messageList.clear()
-
-                    for(postSnapshot in snapshot.children){
+                    for (postSnapshot in snapshot.children) {
                         val message = postSnapshot.getValue(Message::class.java)
                         messageList.add(message!!)
                     }
@@ -69,14 +74,11 @@ class ChatActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-
                 }
-
             })
 
         // adding the message to the database
-        sendButton.setOnClickListener{
-
+        sendButton.setOnClickListener {
             val message = messageBox.text.toString()
             val messageObject = Message(message, senderUid, System.currentTimeMillis())
 
