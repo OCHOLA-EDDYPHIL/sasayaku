@@ -34,7 +34,7 @@ class ChatActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_chat)
 
-        val name = intent.getStringExtra("name")
+        val receiverName = intent.getStringExtra("name")
         val receiverUid = intent.getStringExtra("uid")
 
         val senderUid = FirebaseAuth.getInstance().currentUser?.uid
@@ -46,10 +46,11 @@ class ChatActivity : AppCompatActivity() {
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = name
+
+        supportActionBar?.title = receiverName
 
         toolbar.setNavigationOnClickListener {
-            onBackPressed()
+            finish()
         }
 
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
@@ -89,6 +90,19 @@ class ChatActivity : AppCompatActivity() {
                 }
             messageBox.setText("")
         }
+
+        // Hide items as they reach the toolbar
+        chatRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+                val firstVisibleItem = layoutManager.findViewByPosition(firstVisibleItemPosition)
+                if (firstVisibleItem != null) {
+                    firstVisibleItem?.alpha = 1 - (firstVisibleItem.top.toFloat() / toolbar.height)
+                }
+            }
+        })
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
