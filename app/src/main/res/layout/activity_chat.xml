@@ -11,9 +11,11 @@
         android:id="@+id/chatRecyclerView"
         android:layout_above="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_alignParentTop="true"
-        />
+        android:layout_weight="1"
+        android:padding="10dp"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,14 +23,15 @@
         android:layout_alignParentBottom="true"
         android:id="@+id/linearLayout"
         android:orientation="horizontal"
-        android:layout_marginBottom="10dp">
+        android:padding="10dp">
+
         <EditText
             android:id="@+id/messageBox"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="50dp"
             android:hint="Type a message"
-            android:layout_marginLeft="10dp"
-            android:paddingLeft="10dp"
+            android:layout_marginEnd="10dp"
+            android:paddingStart="10dp"
             android:background="@drawable/message_box_background"
             android:layout_weight="85"/>
 
@@ -37,6 +40,6 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:src="@drawable/arrow"
-            android:layout_weight="20"/>
+            android:layout_weight="15"/>
     </LinearLayout>
 </RelativeLayout>

@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:padding="10dp">
 
     <RelativeLayout
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:background="@drawable/edt_background"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_height="wrap_content">
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp">
 
         <TextView
             android:id="@+id/txt_receive_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="This is a sent message"
+            android:text="This is a received message"
             android:padding="10dp"
-            android:textSize="18sp"/>
-
+            android:textSize="18sp"
+            android:textColor="@color/black"/>
     </RelativeLayout>
-
 </RelativeLayout>

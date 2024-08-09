@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/userRecyclerView"
         android:layout_width="match_parent"
@@ -17,6 +16,5 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:listitem="@layout/user_layout"
         app:layout_constraintTop_toTopOf="parent"
-        />
-
+        android:padding="10dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
