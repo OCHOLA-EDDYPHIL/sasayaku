@@ -1,7 +1,10 @@
 package com.example.chat
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +28,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: UserAdapter
     private lateinit var auth: FirebaseAuth
     private lateinit var mDbRef: DatabaseReference
+
+    private val inactivityTimeout: Long = 30 * 60 * 1000 // 30 minutes
+    private val handler = Handler(Looper.getMainLooper())
+    private val logoutRunnable = Runnable {
+        logout()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +74,30 @@ class MainActivity : AppCompatActivity() {
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
+
+        resetInactivityTimer()
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        resetInactivityTimer()
+    }
+
+    private fun resetInactivityTimer() {
+        handler.removeCallbacks(logoutRunnable)
+        handler.postDelayed(logoutRunnable, inactivityTimeout)
+    }
+
+    private fun logout() {
+        val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("isLoggedIn", false)
+        editor.apply()
+
+        auth.signOut()
+        val intent = Intent(this, Login::class.java)
+        startActivity(intent)
+        finish()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -75,10 +108,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_logout -> {
-                auth.signOut()
-                val intent = Intent(this@MainActivity, Login::class.java)
-                finish()
-                startActivity(intent)
+                logout()
                 true
             }
             else -> super.onOptionsItemSelected(item)

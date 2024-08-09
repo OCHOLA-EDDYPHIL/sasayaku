@@ -22,7 +22,6 @@ class Register : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var mDbRef: DatabaseReference
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -42,7 +41,9 @@ class Register : AppCompatActivity() {
             val email = edtEmail.text.toString()
             val password = edtPassword.text.toString()
 
-            register(name, email, password)
+            if (validateInput(name, email, password)) {
+                register(name, email, password)
+            }
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -52,27 +53,38 @@ class Register : AppCompatActivity() {
         }
     }
 
-    private fun register(name: String, email: String, password: String){
-        // Logic of creating a user
+    private fun validateInput(name: String, email: String, password: String): Boolean {
+        if (name.isEmpty()) {
+            edtName.error = "Name is required"
+            return false
+        }
+        if (email.isEmpty()) {
+            edtEmail.error = "Email is required"
+            return false
+        }
+        if (password.isEmpty()) {
+            edtPassword.error = "Password is required"
+            return false
+        }
+        return true
+    }
+
+    private fun register(name: String, email: String, password: String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    // Code for jumping to home activity
                     addUserToDatabase(name, email, auth.currentUser?.uid!!)
                     val intent = Intent(this@Register, MainActivity::class.java)
                     finish()
                     startActivity(intent)
-
-
                 } else {
-                    // If registration fails, display a message to the user.
                     Toast.makeText(this@Register, "Some error occurred", Toast.LENGTH_SHORT).show()
                 }
             }
     }
-    private fun addUserToDatabase(name: String, email: String, uid: String){
-        mDbRef = FirebaseDatabase.getInstance().getReference()
 
+    private fun addUserToDatabase(name: String, email: String, uid: String) {
+        mDbRef = FirebaseDatabase.getInstance().getReference()
         mDbRef.child("user").child(uid).setValue(User(name, email, uid))
     }
 }

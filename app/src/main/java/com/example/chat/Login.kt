@@ -1,5 +1,6 @@
 package com.example.chat
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -13,9 +14,9 @@ import com.google.firebase.auth.FirebaseAuth
 
 class Login : AppCompatActivity() {
 
-    private lateinit var edtEmail:EditText
-    private lateinit var edtPassword:EditText
-    private lateinit var btnLogin:Button
+    private lateinit var edtEmail: EditText
+    private lateinit var edtPassword: EditText
+    private lateinit var btnLogin: Button
     private lateinit var btnRegister: Button
     private lateinit var auth: FirebaseAuth
 
@@ -40,24 +41,52 @@ class Login : AppCompatActivity() {
         btnRegister = findViewById(R.id.btnRegister)
 
         btnRegister.setOnClickListener {
-            var intent = Intent(this, Register::class.java)
+            val intent = Intent(this, Register::class.java)
             startActivity(intent)
         }
-        btnLogin.setOnClickListener{
-            var email = edtEmail.text.toString()
-            var password = edtPassword.text.toString()
+        btnLogin.setOnClickListener {
+            val email = edtEmail.text.toString()
+            val password = edtPassword.text.toString()
 
-            login(email, password)
+            if (validateInput(email, password)) {
+                login(email, password)
+            }
+        }
+
+        // Check if user is already logged in
+        val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
+        val isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+        if (isLoggedIn) {
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+            finish()
         }
     }
 
+    private fun validateInput(email: String, password: String): Boolean {
+        if (email.isEmpty()) {
+            edtEmail.error = "Email is required"
+            return false
+        }
+        if (password.isEmpty()) {
+            edtPassword.error = "Password is required"
+            return false
+        }
+        return true
+    }
+
     private fun login(email: String, password: String) {
-//    Logic for logging in user
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
+                    // Save login state
+                    val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
+                    val editor = sharedPreferences.edit()
+                    editor.putBoolean("isLoggedIn", true)
+                    editor.apply()
+
                     // Code for jumping to home activity
-                    var intent = Intent(this@Login, MainActivity::class.java)
+                    val intent = Intent(this@Login, MainActivity::class.java)
                     finish()
                     startActivity(intent)
                 } else {
@@ -66,5 +95,4 @@ class Login : AppCompatActivity() {
                 }
             }
     }
-
 }
