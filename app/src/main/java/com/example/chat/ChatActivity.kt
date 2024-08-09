@@ -27,7 +27,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var mDbRef: DatabaseReference
 
     var receiverRoom: String? = null
-    var senderRoom: String? =null
+    var senderRoom: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,12 +56,12 @@ class ChatActivity : AppCompatActivity() {
 
         // logic for adding data to the recyclerview
         mDbRef.child("chats").child(senderRoom!!).child("messages")
-            .addValueEventListener(object: ValueEventListener{
+            .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
 
                     messageList.clear()
 
-                    for(postSnapshot in snapshot.children){
+                    for (postSnapshot in snapshot.children) {
                         val message = postSnapshot.getValue(Message::class.java)
                         messageList.add(message!!)
                     }
@@ -75,7 +75,7 @@ class ChatActivity : AppCompatActivity() {
             })
 
         // adding the message to the database
-        sendButton.setOnClickListener{
+        sendButton.setOnClickListener {
 
             val message = messageBox.text.toString()
             val messageObject = Message(message, senderUid)
