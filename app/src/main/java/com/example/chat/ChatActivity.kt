@@ -1,11 +1,14 @@
 package com.example.chat
 
+import android.graphics.Rect
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +28,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var messageList: ArrayList<Message>
     private lateinit var mDbRef: DatabaseReference
+    private lateinit var linearLayout: LinearLayout
 
     var receiverRoom: String? = null
     var senderRoom: String? = null
@@ -58,6 +62,7 @@ class ChatActivity : AppCompatActivity() {
         sendButton = findViewById(R.id.sendButton)
         messageList = ArrayList()
         messageAdapter = MessageAdapter(this, messageList)
+        linearLayout = findViewById(R.id.linearLayout)
 
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = messageAdapter
@@ -99,7 +104,7 @@ class ChatActivity : AppCompatActivity() {
                 val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
                 val firstVisibleItem = layoutManager.findViewByPosition(firstVisibleItemPosition)
                 if (firstVisibleItem != null) {
-                    firstVisibleItem?.alpha = 1 - (firstVisibleItem.top.toFloat() / toolbar.height)
+                    firstVisibleItem.alpha = 1 - (firstVisibleItem.top.toFloat() / toolbar.height)
                 }
             }
         })
@@ -108,6 +113,26 @@ class ChatActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        val rootLayout = findViewById<ConstraintLayout>(R.id.main)
+        rootLayout.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = Rect()
+            rootLayout.getWindowVisibleDisplayFrame(rect)
+            val screenHeight = rootLayout.rootView.height
+            val keypadHeight = screenHeight - rect.bottom
+
+            val params = linearLayout.layoutParams as ConstraintLayout.LayoutParams
+            if (keypadHeight > screenHeight * 0.15) {
+                // Keyboard is visible
+                params.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+                params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+            } else {
+                // Keyboard is hidden
+                params.topToTop = ConstraintLayout.LayoutParams.UNSET
+                params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            }
+            linearLayout.layoutParams = params
         }
     }
 }
