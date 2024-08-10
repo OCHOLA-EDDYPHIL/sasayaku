@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +20,7 @@ class Register : AppCompatActivity() {
     private lateinit var edtEmail: EditText
     private lateinit var edtPassword: EditText
     private lateinit var btnRegister: Button
+    private lateinit var btnLogin: TextView
     private lateinit var auth: FirebaseAuth
     private lateinit var mDbRef: DatabaseReference
 
@@ -35,6 +37,7 @@ class Register : AppCompatActivity() {
         edtEmail = findViewById(R.id.edt_email)
         edtPassword = findViewById(R.id.edt_password)
         btnRegister = findViewById(R.id.btnRegister)
+        btnLogin = findViewById(R.id.btnLogin)
 
         btnRegister.setOnClickListener {
             val name = edtName.text.toString()
@@ -44,6 +47,10 @@ class Register : AppCompatActivity() {
             if (validateInput(name, email, password)) {
                 register(name, email, password)
             }
+        }
+        btnLogin.setOnClickListener {
+            val intent = Intent(this, Login::class.java)
+            startActivity(intent)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
