@@ -1,5 +1,6 @@
 package com.example.chat
 
+import Message
 import android.graphics.Rect
 import android.os.Bundle
 import android.widget.EditText
