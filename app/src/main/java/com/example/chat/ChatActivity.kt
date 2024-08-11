@@ -106,6 +106,8 @@ class ChatActivity : AppCompatActivity() {
             "${ChatDatabaseHelper.COLUMN_TIMESTAMP} ASC"
         )
 
+        val messageSet = mutableSetOf<String>() // Set to track message IDs
+
         with(cursor) {
             while (moveToNext()) {
                 val message = Message(
@@ -113,32 +115,43 @@ class ChatActivity : AppCompatActivity() {
                     getString(getColumnIndexOrThrow(ChatDatabaseHelper.COLUMN_SENDER_ID)),
                     getLong(getColumnIndexOrThrow(ChatDatabaseHelper.COLUMN_TIMESTAMP))
                 )
-                messageList.add(message)
+                if (!messageSet.contains(message.timestamp.toString())) {
+                    messageList.add(message)
+                    messageSet.add(message.timestamp.toString())
+                }
             }
         }
         cursor.close()
         messageAdapter.notifyDataSetChanged()
     }
 
-    private fun syncMessagesWithFirebase() {
-        mDbRef.child("chats").child(senderRoom!!).child("messages").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                messageList.clear()
-                for (postSnapshot in snapshot.children) {
-                    val message = postSnapshot.getValue(Message::class.java)
-                    messageList.add(message!!)
-                    saveMessageToLocalDb(message)
-                }
-                messageAdapter.notifyDataSetChanged()
-            }
+    private fun clearLocalDb() {
+        val db = dbHelper.writableDatabase
+        db.delete(ChatDatabaseHelper.TABLE_MESSAGES, null, null)
+    }
 
-            override fun onCancelled(error: DatabaseError) {
-            }
-        })
+    private fun syncMessagesWithFirebase() {
+        clearLocalDb()
+        mDbRef.child("chats").child(senderRoom!!).child("messages")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    messageList.clear()
+                    for (postSnapshot in snapshot.children) {
+                        val message = postSnapshot.getValue(Message::class.java)
+                        messageList.add(message!!)
+                        saveMessageToLocalDb(message)
+                    }
+                    messageAdapter.notifyDataSetChanged()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                }
+            })
     }
 
     private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
         return activeNetwork.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
