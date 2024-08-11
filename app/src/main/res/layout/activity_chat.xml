@@ -16,6 +16,7 @@
         android:navigationIcon="@drawable/back"
         android:theme="?attr/actionBarTheme"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        android:paddingTop="10dp"
         app:layout_constraintTop_toTopOf="parent"/>
 
     <androidx.recyclerview.widget.RecyclerView

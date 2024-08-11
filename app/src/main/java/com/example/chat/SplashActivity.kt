@@ -9,12 +9,9 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Delay for 3 seconds
-        android.os.Handler().postDelayed({
-            startActivity(Intent(this, MainActivity::class.java))
-            TODO("splash not working yet")
-            TODO("chat background feature not up yet")
-            finish()
-        }, 9000)
+        // Start MainActivity
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 }
