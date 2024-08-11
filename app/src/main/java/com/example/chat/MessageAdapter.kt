@@ -52,26 +52,26 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
         return messageList.size
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val currentMessage = messageList[position]
-        val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
-        val time = sdf.format(Date(currentMessage.timestamp ?: 0))
+override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    val currentMessage = messageList[position]
+    val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+    val time = sdf.format(Date(currentMessage.timestamp ?: 0))
 
-        when (holder) {
-            is SentViewHolder -> {
-                holder.sentMessage.text = currentMessage.message
-                holder.sentTimestamp.text = time
-            }
-            is ReceiveViewHolder -> {
-                holder.receiveMessage.text = currentMessage.message
-                holder.receiveTimestamp.text = time
-            }
-            is DateViewHolder -> {
-                holder.dateText.text = currentMessage.message
-            }
+    when (holder) {
+        is SentViewHolder -> {
+            holder.sentMessage.text = currentMessage.message
+            holder.sentTimestamp.text = time
+        }
+        is ReceiveViewHolder -> {
+            holder.receiveMessage.text = currentMessage.message
+            holder.receiveTimestamp.text = time
+        }
+        is DateViewHolder -> {
+            val dateSdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            holder.dateText.text = dateSdf.format(Date(currentMessage.timestamp ?: 0))
         }
     }
-
+}
     class SentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val sentMessage: TextView = itemView.findViewById(R.id.txt_sent_message)
         val sentTimestamp: TextView = itemView.findViewById(R.id.txt_sent_timestamp)

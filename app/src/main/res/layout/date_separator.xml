@@ -5,6 +5,7 @@
     android:layout_height="wrap_content"
     android:gravity="center"
     android:padding="10dp"
-    android:textColor="@color/gray"
+    android:text="Today"
+    android:textColor="@color/orange"
     android:textSize="14sp"
     android:textStyle="bold"/>

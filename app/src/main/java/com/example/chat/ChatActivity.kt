@@ -17,6 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ChatActivity : AppCompatActivity() {
 
@@ -98,6 +101,11 @@ class ChatActivity : AppCompatActivity() {
         db.insert(ChatDatabaseHelper.TABLE_MESSAGES, null, values)
     }
 
+    private fun clearLocalDb() {
+        val db = dbHelper.writableDatabase
+        db.delete(ChatDatabaseHelper.TABLE_MESSAGES, null, null)
+    }
+
     private fun loadMessagesFromLocalDb() {
         val db = dbHelper.readableDatabase
         val cursor: Cursor = db.query(
@@ -106,7 +114,8 @@ class ChatActivity : AppCompatActivity() {
             "${ChatDatabaseHelper.COLUMN_TIMESTAMP} ASC"
         )
 
-        val messageSet = mutableSetOf<String>() // Set to track message IDs
+        val messageSet = mutableSetOf<String>()
+        var lastDate: String? = null
 
         with(cursor) {
             while (moveToNext()) {
@@ -115,6 +124,15 @@ class ChatActivity : AppCompatActivity() {
                     getString(getColumnIndexOrThrow(ChatDatabaseHelper.COLUMN_SENDER_ID)),
                     getLong(getColumnIndexOrThrow(ChatDatabaseHelper.COLUMN_TIMESTAMP))
                 )
+                val messageDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(
+                    Date(
+                        message.timestamp ?: 0
+                    )
+                )
+                if (lastDate != messageDate) {
+                    messageList.add(Message(messageDate, null, message.timestamp, true))
+                    lastDate = messageDate
+                }
                 if (!messageSet.contains(message.timestamp.toString())) {
                     messageList.add(message)
                     messageSet.add(message.timestamp.toString())
@@ -125,19 +143,23 @@ class ChatActivity : AppCompatActivity() {
         messageAdapter.notifyDataSetChanged()
     }
 
-    private fun clearLocalDb() {
-        val db = dbHelper.writableDatabase
-        db.delete(ChatDatabaseHelper.TABLE_MESSAGES, null, null)
-    }
-
     private fun syncMessagesWithFirebase() {
         clearLocalDb()
         mDbRef.child("chats").child(senderRoom!!).child("messages")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     messageList.clear()
+                    var lastDate: String? = null
                     for (postSnapshot in snapshot.children) {
                         val message = postSnapshot.getValue(Message::class.java)
+                        val messageDate = SimpleDateFormat(
+                            "yyyyMMdd",
+                            Locale.getDefault()
+                        ).format(Date(message?.timestamp ?: 0))
+                        if (lastDate != messageDate) {
+                            messageList.add(Message(messageDate, null, message?.timestamp, true))
+                            lastDate = messageDate
+                        }
                         messageList.add(message!!)
                         saveMessageToLocalDb(message)
                     }
