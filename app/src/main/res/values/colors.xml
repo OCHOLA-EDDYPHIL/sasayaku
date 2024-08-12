@@ -15,4 +15,5 @@
     <color name="purple">#FF800080</color>
     <color name="pink">#FFFFC0CB</color>
     <color name="brown">#FFA52A2A</color>
+    <color name="black_transparent">#80000000</color>
 </resources>
