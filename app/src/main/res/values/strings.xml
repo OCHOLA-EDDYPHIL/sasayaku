@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Tubonge</string>
+    <string name="user_name">abbay</string>
+    <string name="reg_redirect_txt">Create an account</string>
+    <string name="message_box_hint">Type a message</string>
 </resources>
