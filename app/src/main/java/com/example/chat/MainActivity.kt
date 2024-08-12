@@ -1,10 +1,7 @@
 package com.example.chat
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
@@ -24,7 +21,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: UserAdapter
     private lateinit var auth: FirebaseAuth
     private lateinit var mDbRef: DatabaseReference
-    private lateinit var userDbHelper: UserDatabaseHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +33,6 @@ class MainActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         mDbRef = FirebaseDatabase.getInstance().getReference()
-        userDbHelper = UserDatabaseHelper(this)
 
         userList = ArrayList()
         adapter = UserAdapter(this, userList)
@@ -46,50 +41,10 @@ class MainActivity : AppCompatActivity() {
         userRecyclerView.layoutManager = LinearLayoutManager(this)
         userRecyclerView.adapter = adapter
 
-        loadUsersFromLocalDb()
-
-        if (isNetworkAvailable()) {
-            syncUsersWithFirebase()
-        }
+        loadUsersFromFirebase()
     }
 
-    private fun saveUserToLocalDb(user: User) {
-        val db = userDbHelper.writableDatabase
-        val values = ContentValues().apply {
-            put(UserDatabaseHelper.COLUMN_UID, user.uid)
-            put(UserDatabaseHelper.COLUMN_NAME, user.name)
-            put(UserDatabaseHelper.COLUMN_EMAIL, user.email)
-        }
-        db.insertWithOnConflict(UserDatabaseHelper.TABLE_USERS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
-    }
-
-    private fun loadUsersFromLocalDb() {
-    val db = userDbHelper.readableDatabase
-    val cursor: Cursor = db.query(
-        UserDatabaseHelper.TABLE_USERS,
-        null, null, null, null, null,
-        null
-    )
-
-    val currentUserUid = auth.currentUser?.uid
-
-    with(cursor) {
-        while (moveToNext()) {
-            val user = User(
-                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_NAME)),
-                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)),
-                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_UID))
-            )
-            if (user.uid != currentUserUid) {
-                userList.add(user)
-            }
-        }
-    }
-    cursor.close()
-    adapter.notifyDataSetChanged()
-}
-
-    private fun syncUsersWithFirebase() {
+    private fun loadUsersFromFirebase() {
         mDbRef.child("user").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 userList.clear()
@@ -97,7 +52,6 @@ class MainActivity : AppCompatActivity() {
                     val currentUser = postSnapshot.getValue(User::class.java)
                     if (auth.currentUser?.uid != currentUser?.uid) {
                         userList.add(currentUser!!)
-                        saveUserToLocalDb(currentUser)
                     }
                 }
                 adapter.notifyDataSetChanged()
@@ -109,7 +63,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
         return activeNetwork.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -138,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                 logout()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
