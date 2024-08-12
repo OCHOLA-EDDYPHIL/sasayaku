@@ -57,6 +57,7 @@
             android:id="@+id/sendButton"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:contentDescription="Send"
             android:src="@drawable/arrow"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -29,11 +29,11 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/txt_receive_message"
             android:text="12:00 PM"
-            android:paddingRight="10dp"
+            android:paddingEnd="10dp"
             android:paddingTop="2dp"
             android:paddingBottom="5dp"
-            android:layout_alignRight="@id/txt_receive_message"
-            android:textSize="10sp"
+            android:layout_alignEnd="@id/txt_receive_message"
+            android:textSize="11sp"
             android:textColor="@color/green"/>
     </RelativeLayout>
 </RelativeLayout>
