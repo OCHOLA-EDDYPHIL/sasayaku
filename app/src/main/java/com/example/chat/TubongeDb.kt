@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/example/chat/MyApplication.kt
 package com.example.chat
 
 import android.app.Application

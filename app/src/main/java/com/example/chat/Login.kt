@@ -6,12 +6,13 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 
 class Login : AppCompatActivity() {
 
@@ -77,6 +78,11 @@ class Login : AppCompatActivity() {
     }
 
     private fun login(email: String, password: String) {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            AlertUtils.showAlert(this, "Login Failed", "No internet connection.")
+            return
+        }
+
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
@@ -92,7 +98,17 @@ class Login : AppCompatActivity() {
                     startActivity(intent)
                 } else {
                     // If sign in fails, display a message to the user.
-                    Toast.makeText(this, "Some error occurred", Toast.LENGTH_SHORT).show()
+                    when (val exception = task.exception) {
+                        is FirebaseAuthInvalidUserException -> {
+                            AlertUtils.showAlert(this, "Login Failed", "No account found with this email.")
+                        }
+                        is FirebaseAuthInvalidCredentialsException -> {
+                            AlertUtils.showAlert(this, "Login Failed", "Incorrect password.")
+                        }
+                        else -> {
+                            AlertUtils.showAlert(this, "Login Failed", "Some error occurred: ${exception?.message}")
+                        }
+                    }
                 }
             }
     }

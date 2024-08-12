@@ -5,13 +5,14 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DatabaseReference
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.database.FirebaseDatabase
 
 class Register : AppCompatActivity() {
@@ -22,7 +23,6 @@ class Register : AppCompatActivity() {
     private lateinit var btnRegister: Button
     private lateinit var btnLogin: TextView
     private lateinit var auth: FirebaseAuth
-    private lateinit var mDbRef: DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +77,11 @@ class Register : AppCompatActivity() {
     }
 
     private fun register(name: String, email: String, password: String) {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            AlertUtils.showAlert(this, "Registration Failed", "No internet connection.")
+            return
+        }
+
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
@@ -85,13 +90,27 @@ class Register : AppCompatActivity() {
                     finish()
                     startActivity(intent)
                 } else {
-                    Toast.makeText(this@Register, "Some error occurred", Toast.LENGTH_SHORT).show()
+                    val exception = task.exception
+                    when (exception) {
+                        is FirebaseAuthUserCollisionException -> {
+                            AlertUtils.showAlert(this, "Registration Failed", "This email is already registered.")
+                        }
+                        is FirebaseAuthWeakPasswordException -> {
+                            AlertUtils.showAlert(this, "Registration Failed", "Password is too weak.")
+                        }
+                        is FirebaseAuthInvalidCredentialsException -> {
+                            AlertUtils.showAlert(this, "Registration Failed", "Invalid email format.")
+                        }
+                        else -> {
+                            AlertUtils.showAlert(this, "Registration Failed", "Some error occurred: ${exception?.message}")
+                        }
+                    }
                 }
             }
     }
 
     private fun addUserToDatabase(name: String, email: String, uid: String) {
-        mDbRef = FirebaseDatabase.getInstance().getReference()
+        val mDbRef = FirebaseDatabase.getInstance().getReference()
         mDbRef.child("user").child(uid).setValue(User(name, email, uid))
     }
 }
