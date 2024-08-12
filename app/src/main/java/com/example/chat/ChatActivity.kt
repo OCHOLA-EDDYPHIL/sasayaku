@@ -100,18 +100,12 @@ class ChatActivity : AppCompatActivity() {
                         messageList.add(message!!)
                     }
                     messageAdapter.notifyDataSetChanged()
+                    // Scroll to the last message
+                    chatRecyclerView.scrollToPosition(messageList.size - 1)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                 }
             })
     }
-
-//    private fun isNetworkAvailable(): Boolean {
-//        val connectivityManager =
-//            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//        val network = connectivityManager.activeNetwork ?: return false
-//        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
-//        return activeNetwork.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-//    }
 }

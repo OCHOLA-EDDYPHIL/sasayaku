@@ -1,11 +1,13 @@
 package com.example.chat
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -62,15 +64,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("isLoggedIn", false)
-        editor.apply()
+        AlertDialog.Builder(this).apply {
+            setTitle("Confirm Logout")
+            setMessage("Are you sure you want to logout?")
+            setPositiveButton("Yes") { dialog: DialogInterface, _: Int ->
+                val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
+                val editor = sharedPreferences.edit()
+                editor.putBoolean("isLoggedIn", false)
+                editor.apply()
 
-        auth.signOut()
-        val intent = Intent(this, Login::class.java)
-        startActivity(intent)
-        finish()
+                auth.signOut()
+                val intent = Intent(this@MainActivity, Login::class.java)
+                startActivity(intent)
+                finish()
+            }
+            setNegativeButton("No") { dialog: DialogInterface, _: Int ->
+                dialog.dismiss()
+            }
+            create()
+            show()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
