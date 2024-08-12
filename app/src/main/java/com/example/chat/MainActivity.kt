@@ -64,26 +64,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadUsersFromLocalDb() {
-        val db = userDbHelper.readableDatabase
-        val cursor: Cursor = db.query(
-            UserDatabaseHelper.TABLE_USERS,
-            null, null, null, null, null,
-            null
-        )
+    val db = userDbHelper.readableDatabase
+    val cursor: Cursor = db.query(
+        UserDatabaseHelper.TABLE_USERS,
+        null, null, null, null, null,
+        null
+    )
 
-        with(cursor) {
-            while (moveToNext()) {
-                val user = User(
-                    getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_NAME)),
-                    getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)),
-                    getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_UID))
-                )
+    val currentUserUid = auth.currentUser?.uid
+
+    with(cursor) {
+        while (moveToNext()) {
+            val user = User(
+                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_NAME)),
+                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_EMAIL)),
+                getString(getColumnIndexOrThrow(UserDatabaseHelper.COLUMN_UID))
+            )
+            if (user.uid != currentUserUid) {
                 userList.add(user)
             }
         }
-        cursor.close()
-        adapter.notifyDataSetChanged()
     }
+    cursor.close()
+    adapter.notifyDataSetChanged()
+}
 
     private fun syncUsersWithFirebase() {
         mDbRef.child("user").addValueEventListener(object : ValueEventListener {

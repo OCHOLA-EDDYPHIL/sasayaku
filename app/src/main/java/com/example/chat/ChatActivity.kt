@@ -1,5 +1,6 @@
 package com.example.chat
 
+import android.util.Log
 import Message
 import android.content.ContentValues
 import android.content.Context
@@ -91,26 +92,33 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    private fun clearLocalDb() {
+        val db = dbHelper.writableDatabase
+        db.delete(ChatDatabaseHelper.TABLE_MESSAGES, null, null)
+    }
+
     private fun saveMessageToLocalDb(message: Message) {
         val db = dbHelper.writableDatabase
         val values = ContentValues().apply {
             put(ChatDatabaseHelper.COLUMN_MESSAGE, message.message)
             put(ChatDatabaseHelper.COLUMN_SENDER_ID, message.senderId)
             put(ChatDatabaseHelper.COLUMN_TIMESTAMP, message.timestamp)
+            put(ChatDatabaseHelper.COLUMN_SENDER_ROOM, senderRoom)
+            put(ChatDatabaseHelper.COLUMN_RECEIVER_ROOM, receiverRoom)
         }
-        db.insert(ChatDatabaseHelper.TABLE_MESSAGES, null, values)
-    }
-
-    private fun clearLocalDb() {
-        val db = dbHelper.writableDatabase
-        db.delete(ChatDatabaseHelper.TABLE_MESSAGES, null, null)
+        val result = db.insert(ChatDatabaseHelper.TABLE_MESSAGES, null, values)
+        Log.d("ChatActivity", "Message saved to local DB: $result")
     }
 
     private fun loadMessagesFromLocalDb() {
         val db = dbHelper.readableDatabase
         val cursor: Cursor = db.query(
             ChatDatabaseHelper.TABLE_MESSAGES,
-            null, null, null, null, null,
+            null,
+            "${ChatDatabaseHelper.COLUMN_SENDER_ROOM} = ? OR ${ChatDatabaseHelper.COLUMN_RECEIVER_ROOM} = ?",
+            arrayOf(senderRoom, receiverRoom),
+            null,
+            null,
             "${ChatDatabaseHelper.COLUMN_TIMESTAMP} ASC"
         )
 
@@ -137,6 +145,7 @@ class ChatActivity : AppCompatActivity() {
                     messageList.add(message)
                     messageSet.add(message.timestamp.toString())
                 }
+                Log.d("ChatActivity", "Message loaded from local DB: ${message.message}")
             }
         }
         cursor.close()
