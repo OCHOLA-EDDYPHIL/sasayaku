@@ -1,6 +1,5 @@
 package com.example.chat
 
-import Message
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -58,37 +57,45 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-    val currentMessage = messageList[position]
-    val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
-    val time = sdf.format(Date(currentMessage.timestamp ?: 0))
+        val currentMessage = messageList[position]
+        val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        val time = sdf.format(Date(currentMessage.timestamp ?: 0))
 
-    when (holder) {
-        is SentViewHolder -> {
-            holder.sentMessage.text = currentMessage.message
-            holder.sentTimestamp.text = time
-        }
-        is ReceiveViewHolder -> {
-            holder.receiveMessage.text = currentMessage.message
-            holder.receiveTimestamp.text = time
-        }
-        is DateViewHolder -> {
-            val dateSdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            val messageDate = Date(currentMessage.timestamp ?: 0)
-            val today = Date()
-            val yesterday = Date(today.time - 24 * 60 * 60 * 1000)
+        when (holder) {
+            is SentViewHolder -> {
+                holder.sentMessage.text = currentMessage.message
+                holder.sentTimestamp.text = time
+                holder.sentStatus.text = when (currentMessage.status) {
+                    MessageStatus.READ -> "Read"
+                    MessageStatus.DELIVERED -> "Delivered"
+                    MessageStatus.SENT -> "Sent"
+                }
+            }
 
-            holder.dateText.text = when {
-                dateSdf.format(messageDate) == dateSdf.format(today) -> "Today"
-                dateSdf.format(messageDate) == dateSdf.format(yesterday) -> "Yesterday"
-                else -> dateSdf.format(messageDate)
+            is ReceiveViewHolder -> {
+                holder.receiveMessage.text = currentMessage.message
+                holder.receiveTimestamp.text = time
+            }
+
+            is DateViewHolder -> {
+                val dateSdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                val messageDate = Date(currentMessage.timestamp ?: 0)
+                val today = Date()
+                val yesterday = Date(today.time - 24 * 60 * 60 * 1000)
+
+                holder.dateText.text = when {
+                    dateSdf.format(messageDate) == dateSdf.format(today) -> "Today"
+                    dateSdf.format(messageDate) == dateSdf.format(yesterday) -> "Yesterday"
+                    else -> dateSdf.format(messageDate)
+                }
             }
         }
     }
-}
 
     class SentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val sentMessage: TextView = itemView.findViewById(R.id.txt_sent_message)
         val sentTimestamp: TextView = itemView.findViewById(R.id.txt_sent_timestamp)
+        val sentStatus: TextView = itemView.findViewById(R.id.txt_sent_status)
     }
 
     class ReceiveViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
