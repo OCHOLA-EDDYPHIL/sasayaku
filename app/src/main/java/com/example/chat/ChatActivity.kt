@@ -122,9 +122,9 @@ class ChatActivity : AppCompatActivity() {
                         ).format(Date(message?.timestamp ?: 0))
                         if (lastDate != messageDate) {
                             if (message?.timestamp != null) {
-                                messageList.add(Message(null, null, message.timestamp, true))
+                                messageList.add(Message(messageDate, null, message.timestamp, true))
+                                lastDate = messageDate
                             }
-                            lastDate = messageDate
                         }
                         if (!message?.message.isNullOrEmpty()) {
                             message?.let { messageList.add(it) }
