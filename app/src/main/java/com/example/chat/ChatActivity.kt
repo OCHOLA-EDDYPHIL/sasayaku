@@ -14,6 +14,10 @@ import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * ChatActivity handles the chat interface, including sending and receiving messages,
+ * updating message statuses, and managing the chat UI.
+ */
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var chatRecyclerView: RecyclerView
@@ -31,6 +35,10 @@ class ChatActivity : AppCompatActivity() {
         const val TIME_FORMAT = "hh:mm a"
     }
 
+    /**
+     * Called when the activity is first created.
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down then this Bundle contains the data it most recently supplied.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -46,6 +54,9 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Initializes the Firebase database reference and sets up the sender and receiver rooms.
+     */
     private fun initializeFirebaseDatabaseReference() {
         val receiverUid = intent.getStringExtra("uid")
         val senderUid = FirebaseAuth.getInstance().currentUser?.uid
@@ -55,6 +66,9 @@ class ChatActivity : AppCompatActivity() {
         receiverRoom = senderUid + receiverUid
     }
 
+    /**
+     * Sets up the toolbar with the receiver's name and back navigation.
+     */
     private fun setupToolbar() {
         val receiverName = intent.getStringExtra("name")
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -67,6 +81,9 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Sets up the RecyclerView for displaying chat messages.
+     */
     private fun setupRecyclerView() {
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageBox = findViewById(R.id.messageBox)
@@ -100,6 +117,10 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
+    /**
+     * Sends a message. If the network is available, the message status is set to SENT.
+     * Otherwise, the status is set to WAITING.
+     */
     private fun sendMessage() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
@@ -126,6 +147,9 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Updates the status of messages that were waiting to be sent when the network becomes available.
+     */
     private fun updateWaitingMessages() {
         if (NetworkUtils.isNetworkAvailable(this)) {
             mDbRef.child("chats").child(senderRoom!!).child("messages")
@@ -148,11 +172,17 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Called when the activity is resumed. Updates waiting messages if the network is available.
+     */
     override fun onResume() {
         super.onResume()
         updateWaitingMessages()
     }
 
+    /**
+     * Loads messages from Firebase and updates the RecyclerView.
+     */
     private fun loadMessagesFromFirebase() {
         mDbRef.child("chats").child(senderRoom!!).child("messages")
             .addValueEventListener(object : ValueEventListener {

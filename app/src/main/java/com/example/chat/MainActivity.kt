@@ -4,15 +4,22 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
+import android.view.View
+import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: UserAdapter
     private lateinit var auth: FirebaseAuth
     private lateinit var mDbRef: DatabaseReference
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,31 +49,49 @@ class MainActivity : AppCompatActivity() {
         userRecyclerView.layoutManager = LinearLayoutManager(this)
         userRecyclerView.adapter = adapter
 
+        progressBar = findViewById(R.id.progressBar)
+        progressBar.visibility = View.VISIBLE
+
         loadUsersFromFirebase()
     }
 
     private fun loadUsersFromFirebase() {
+        progressBar.visibility = View.VISIBLE
+
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            AlertUtils.showAlert(this, "Error", "No internet connection.")
+            return
+        }
         mDbRef.child("user").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                userList.clear()
-                for (postSnapshot in snapshot.children) {
-                    val currentUser = postSnapshot.getValue(User::class.java)
-                    if (auth.currentUser?.uid != currentUser?.uid) {
-                        userList.add(currentUser!!)
+                try {
+                    userList.clear()
+                    for (postSnapshot in snapshot.children) {
+                        val currentUser = postSnapshot.getValue(User::class.java)
+                        if (auth.currentUser?.uid != currentUser?.uid) {
+                            userList.add(currentUser!!)
+                        }
                     }
+                    adapter.notifyDataSetChanged()
+                    progressBar.visibility = View.GONE
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error loading users", e)
+                    AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
                 }
-                adapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e("MainActivity", "Database error: ${error.message}", error.toException())
                 AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
+                progressBar.visibility = View.GONE
             }
         })
     }
 
+
     private fun logout() {
         AlertDialog.Builder(this).apply {
-            setTitle("Confirm Logout")
+            setTitle("Confirm")
             setMessage("Are you sure you want to logout?")
             setPositiveButton("Yes") { dialog: DialogInterface, _: Int ->
                 val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
