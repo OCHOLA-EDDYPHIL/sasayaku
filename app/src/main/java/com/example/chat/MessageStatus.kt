@@ -1,5 +1,5 @@
 package com.example.chat
 
 enum class MessageStatus {
-    SENT, DELIVERED, READ
+    WAITING, SENT, DELIVERED, READ
 }

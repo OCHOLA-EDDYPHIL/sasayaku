@@ -69,6 +69,7 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
                     MessageStatus.READ -> "Read"
                     MessageStatus.DELIVERED -> "Delivered"
                     MessageStatus.SENT -> "Sent"
+                    MessageStatus.WAITING -> "Waiting"
                 }
             }
 

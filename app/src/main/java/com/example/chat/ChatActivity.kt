@@ -1,6 +1,7 @@
 package com.example.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
@@ -9,15 +10,9 @@ import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.ChildEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 class ChatActivity : AppCompatActivity() {
 
@@ -31,21 +26,37 @@ class ChatActivity : AppCompatActivity() {
     var receiverRoom: String? = null
     var senderRoom: String? = null
 
+    companion object {
+        const val DATE_FORMAT = "yyyyMMdd"
+        const val TIME_FORMAT = "hh:mm a"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_chat)
 
-        val receiverName = intent.getStringExtra("name")
-        val receiverUid = intent.getStringExtra("uid")
+        initializeFirebaseDatabaseReference()
+        setupToolbar()
+        setupRecyclerView()
+        loadMessagesFromFirebase()
 
+        sendButton.setOnClickListener {
+            sendMessage()
+        }
+    }
+
+    private fun initializeFirebaseDatabaseReference() {
+        val receiverUid = intent.getStringExtra("uid")
         val senderUid = FirebaseAuth.getInstance().currentUser?.uid
         mDbRef = FirebaseDatabase.getInstance().getReference()
 
         senderRoom = receiverUid + senderUid
         receiverRoom = senderUid + receiverUid
+    }
 
-        // Set up the toolbar
+    private fun setupToolbar() {
+        val receiverName = intent.getStringExtra("name")
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -54,7 +65,9 @@ class ChatActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener {
             finish()
         }
+    }
 
+    private fun setupRecyclerView() {
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageBox = findViewById(R.id.messageBox)
         sendButton = findViewById(R.id.sendButton)
@@ -63,26 +76,6 @@ class ChatActivity : AppCompatActivity() {
 
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = messageAdapter
-
-        loadMessagesFromFirebase()
-
-        sendButton.setOnClickListener {
-            val message = messageBox.text.toString().trim()
-            if (message.isNotEmpty()) {
-                val messageObject = Message(
-                    message, senderUid, System.currentTimeMillis(), status = MessageStatus.SENT
-                )
-
-                if (NetworkUtils.isNetworkAvailable(this)) {
-                    mDbRef.child("chats").child(senderRoom!!).child("messages").push()
-                        .setValue(messageObject).addOnSuccessListener {
-                            mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
-                                .setValue(messageObject)
-                        }
-                }
-                messageBox.setText("")
-            }
-        }
 
         chatRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -93,7 +86,7 @@ class ChatActivity : AppCompatActivity() {
 
                 for (i in firstVisibleItemPosition..lastVisibleItemPosition) {
                     val message = messageList.getOrNull(i) ?: continue
-                    if (message.status != MessageStatus.READ && message.senderId != senderUid) {
+                    if (message.status != MessageStatus.READ && message.senderId != FirebaseAuth.getInstance().currentUser?.uid) {
                         message.id?.let { messageId ->
                             message.status = MessageStatus.READ
                             mDbRef.child("chats").child(senderRoom!!).child("messages")
@@ -107,6 +100,59 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
+    private fun sendMessage() {
+        val message = messageBox.text.toString().trim()
+        if (message.isNotEmpty()) {
+            val senderUid = FirebaseAuth.getInstance().currentUser?.uid
+            val messageObject = Message(
+                message,
+                senderUid,
+                System.currentTimeMillis(),
+                status = if (NetworkUtils.isNetworkAvailable(this)) {
+                    MessageStatus.SENT
+                } else {
+                    MessageStatus.WAITING
+                }
+            )
+
+            mDbRef.child("chats").child(senderRoom!!).child("messages").push()
+                .setValue(messageObject).addOnSuccessListener {
+                    if (NetworkUtils.isNetworkAvailable(this)) {
+                        mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
+                            .setValue(messageObject)
+                    }
+                }
+            messageBox.setText("")
+        }
+    }
+
+    private fun updateWaitingMessages() {
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            mDbRef.child("chats").child(senderRoom!!).child("messages")
+                .orderByChild("status").equalTo(MessageStatus.WAITING.name)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        for (postSnapshot in snapshot.children) {
+                            val message = postSnapshot.getValue(Message::class.java)
+                            message?.id = postSnapshot.key
+                            message?.status = MessageStatus.SENT
+                            mDbRef.child("chats").child(senderRoom!!).child("messages")
+                                .child(message?.id!!).child("status").setValue(MessageStatus.SENT)
+                            mDbRef.child("chats").child(receiverRoom!!).child("messages")
+                                .child(message.id!!).setValue(message)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateWaitingMessages()
+    }
+
     private fun loadMessagesFromFirebase() {
         mDbRef.child("chats").child(senderRoom!!).child("messages")
             .addValueEventListener(object : ValueEventListener {
@@ -117,12 +163,15 @@ class ChatActivity : AppCompatActivity() {
                         val message = postSnapshot.getValue(Message::class.java)
                         message?.id = postSnapshot.key
                         message?.status = message?.status ?: MessageStatus.SENT
-                        val messageDate = SimpleDateFormat(
-                            "yyyyMMdd", Locale.getDefault()
-                        ).format(Date(message?.timestamp ?: 0))
+
+                        // Log the message object to debug
+                        Log.d("ChatActivity", "Message: $message.toString()")
+
+                        val messageDate = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
+                            .format(Date(message?.timestamp ?: 0))
                         if (lastDate != messageDate) {
                             if (message?.timestamp != null) {
-                                messageList.add(Message(messageDate, null, message.timestamp, true))
+                                messageList.add(Message(null, null, message.timestamp, true))
                                 lastDate = messageDate
                             }
                         }
