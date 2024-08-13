@@ -29,7 +29,7 @@ class Login : AppCompatActivity() {
 
         supportActionBar?.hide()
 
-        auth = FirebaseAuth.getInstance()
+        auth = TubongeDb.getAuth()
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -100,13 +100,23 @@ class Login : AppCompatActivity() {
                     // If sign in fails, display a message to the user.
                     when (val exception = task.exception) {
                         is FirebaseAuthInvalidUserException -> {
-                            AlertUtils.showAlert(this, "Login Failed", "No account found with this email.")
+                            AlertUtils.showAlert(
+                                this,
+                                "Login Failed",
+                                "No account found with this email."
+                            )
                         }
+
                         is FirebaseAuthInvalidCredentialsException -> {
                             AlertUtils.showAlert(this, "Login Failed", "Incorrect password.")
                         }
+
                         else -> {
-                            AlertUtils.showAlert(this, "Login Failed", "Some error occurred: ${exception?.message}")
+                            AlertUtils.showAlert(
+                                this,
+                                "Login Failed",
+                                "Some error occurred: ${exception?.message}"
+                            )
                         }
                     }
                 }

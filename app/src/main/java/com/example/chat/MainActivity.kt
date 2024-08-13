@@ -18,7 +18,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class MainActivity : AppCompatActivity() {
@@ -39,8 +38,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.title = getString(R.string.app_name)
 
-        auth = FirebaseAuth.getInstance()
-        mDbRef = FirebaseDatabase.getInstance().getReference()
+        auth = TubongeDb.getAuth()
+        mDbRef = TubongeDb.getDatabase().getReference()
 
         userList = ArrayList()
         adapter = UserAdapter(this, userList)
@@ -87,7 +86,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
-
 
     private fun logout() {
         AlertDialog.Builder(this).apply {

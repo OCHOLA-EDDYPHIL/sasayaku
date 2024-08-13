@@ -9,15 +9,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-/**
- * ChatActivity handles the chat interface, including sending and receiving messages,
- * updating message statuses, and managing the chat UI.
- */
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var chatRecyclerView: RecyclerView
@@ -35,10 +35,6 @@ class ChatActivity : AppCompatActivity() {
         const val TIME_FORMAT = "hh:mm a"
     }
 
-    /**
-     * Called when the activity is first created.
-     * @param savedInstanceState If the activity is being re-initialized after previously being shut down then this Bundle contains the data it most recently supplied.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -54,21 +50,15 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Initializes the Firebase database reference and sets up the sender and receiver rooms.
-     */
     private fun initializeFirebaseDatabaseReference() {
         val receiverUid = intent.getStringExtra("uid")
-        val senderUid = FirebaseAuth.getInstance().currentUser?.uid
-        mDbRef = FirebaseDatabase.getInstance().getReference()
+        val senderUid = TubongeDb.getAuth().currentUser?.uid
+        mDbRef = TubongeDb.getDatabase().getReference()
 
         senderRoom = receiverUid + senderUid
         receiverRoom = senderUid + receiverUid
     }
 
-    /**
-     * Sets up the toolbar with the receiver's name and back navigation.
-     */
     private fun setupToolbar() {
         val receiverName = intent.getStringExtra("name")
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -81,9 +71,6 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Sets up the RecyclerView for displaying chat messages.
-     */
     private fun setupRecyclerView() {
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageBox = findViewById(R.id.messageBox)
@@ -103,7 +90,7 @@ class ChatActivity : AppCompatActivity() {
 
                 for (i in firstVisibleItemPosition..lastVisibleItemPosition) {
                     val message = messageList.getOrNull(i) ?: continue
-                    if (message.status != MessageStatus.READ && message.senderId != FirebaseAuth.getInstance().currentUser?.uid) {
+                    if (message.status != MessageStatus.READ && message.senderId != TubongeDb.getAuth().currentUser?.uid) {
                         message.id?.let { messageId ->
                             message.status = MessageStatus.READ
                             mDbRef.child("chats").child(senderRoom!!).child("messages")
@@ -117,14 +104,10 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
-    /**
-     * Sends a message. If the network is available, the message status is set to SENT.
-     * Otherwise, the status is set to WAITING.
-     */
     private fun sendMessage() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
-            val senderUid = FirebaseAuth.getInstance().currentUser?.uid
+            val senderUid = TubongeDb.getAuth().currentUser?.uid
             val messageObject = Message(
                 message,
                 senderUid,
@@ -147,9 +130,6 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Updates the status of messages that were waiting to be sent when the network becomes available.
-     */
     private fun updateWaitingMessages() {
         if (NetworkUtils.isNetworkAvailable(this)) {
             mDbRef.child("chats").child(senderRoom!!).child("messages")
@@ -172,17 +152,11 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Called when the activity is resumed. Updates waiting messages if the network is available.
-     */
     override fun onResume() {
         super.onResume()
         updateWaitingMessages()
     }
 
-    /**
-     * Loads messages from Firebase and updates the RecyclerView.
-     */
     private fun loadMessagesFromFirebase() {
         mDbRef.child("chats").child(senderRoom!!).child("messages")
             .addValueEventListener(object : ValueEventListener {
@@ -194,7 +168,6 @@ class ChatActivity : AppCompatActivity() {
                         message?.id = postSnapshot.key
                         message?.status = message?.status ?: MessageStatus.SENT
 
-                        // Log the message object to debug
                         Log.d("ChatActivity", "Message: $message.toString()")
 
                         val messageDate = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
@@ -210,7 +183,6 @@ class ChatActivity : AppCompatActivity() {
                         }
                     }
                     messageAdapter.notifyDataSetChanged()
-                    // Scroll to the last message
                     chatRecyclerView.scrollToPosition(messageList.size - 1)
                 }
 
@@ -218,7 +190,6 @@ class ChatActivity : AppCompatActivity() {
                 }
             })
 
-        // Update message status to DELIVERED when received
         mDbRef.child("chats").child(receiverRoom!!).child("messages")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {

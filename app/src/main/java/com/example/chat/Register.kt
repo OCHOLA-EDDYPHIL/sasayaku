@@ -10,10 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.database.FirebaseDatabase
 
 class Register : AppCompatActivity() {
 
@@ -31,7 +30,7 @@ class Register : AppCompatActivity() {
 
         supportActionBar?.hide()
 
-        auth = FirebaseAuth.getInstance()
+        auth = TubongeDb.getAuth()
 
         edtName = findViewById(R.id.edt_name)
         edtEmail = findViewById(R.id.edt_email)
@@ -93,16 +92,35 @@ class Register : AppCompatActivity() {
                     val exception = task.exception
                     when (exception) {
                         is FirebaseAuthUserCollisionException -> {
-                            AlertUtils.showAlert(this, "Registration Failed", "This email is already registered.")
+                            AlertUtils.showAlert(
+                                this,
+                                "Registration Failed",
+                                "This email is already registered."
+                            )
                         }
+
                         is FirebaseAuthWeakPasswordException -> {
-                            AlertUtils.showAlert(this, "Registration Failed", "Password is too weak.")
+                            AlertUtils.showAlert(
+                                this,
+                                "Registration Failed",
+                                "Password is too weak."
+                            )
                         }
+
                         is FirebaseAuthInvalidCredentialsException -> {
-                            AlertUtils.showAlert(this, "Registration Failed", "Invalid email format.")
+                            AlertUtils.showAlert(
+                                this,
+                                "Registration Failed",
+                                "Invalid email format."
+                            )
                         }
+
                         else -> {
-                            AlertUtils.showAlert(this, "Registration Failed", "Some error occurred: ${exception?.message}")
+                            AlertUtils.showAlert(
+                                this,
+                                "Registration Failed",
+                                "Some error occurred: ${exception?.message}"
+                            )
                         }
                     }
                 }
@@ -110,7 +128,7 @@ class Register : AppCompatActivity() {
     }
 
     private fun addUserToDatabase(name: String, email: String, uid: String) {
-        val mDbRef = FirebaseDatabase.getInstance().getReference()
+        val mDbRef = TubongeDb.getDatabase().getReference()
         mDbRef.child("user").child(uid).setValue(User(name, email, uid))
     }
 }
