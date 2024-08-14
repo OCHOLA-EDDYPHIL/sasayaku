@@ -119,10 +119,11 @@ class ChatActivity : AppCompatActivity() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
             val senderUid = TubongeDb.getAuth().currentUser?.uid
+            val timestamp = System.currentTimeMillis()
             val messageObject = Message(
                 message,
                 senderUid,
-                System.currentTimeMillis(),
+                timestamp,
                 status = if (NetworkUtils.isNetworkAvailable(this)) {
                     MessageStatus.SENT
                 } else {
@@ -130,19 +131,18 @@ class ChatActivity : AppCompatActivity() {
                 }
             )
 
-            mDbRef.child("chats").child(senderRoom!!).child("messages").push()
-                .setValue(messageObject).addOnSuccessListener {
-                    if (NetworkUtils.isNetworkAvailable(this)) {
-                        mDbRef.child("chats").child(receiverRoom!!).child("messages").push()
-                            .setValue(messageObject)
-                    }
-                }
-            messageBox.setText("")
-        }
-        else {
-        // Toast message that message was blank
-            Toast.makeText(this, "Message cannot be blank", Toast.LENGTH_SHORT).show()
 
+            val updates = hashMapOf<String, Any>(
+                "/chats/$senderRoom/messages/${mDbRef.push().key}" to messageObject,
+                "/chats/$receiverRoom/messages/${mDbRef.push().key}" to messageObject,
+                "/user/$senderUid/lastMessageTimestamp" to timestamp
+            )
+
+            mDbRef.updateChildren(updates).addOnSuccessListener {
+                messageBox.setText("")
+            }
+        } else {
+            Toast.makeText(this, "Message cannot be blank", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -198,11 +198,20 @@ class ChatActivity : AppCompatActivity() {
                     }
                     messageAdapter.notifyDataSetChanged()
                     chatRecyclerView.scrollToPosition(messageList.size - 1)
+
+                    // Update last message timestamp for receiver
+                    val receiverUid = intent.getStringExtra("uid")
+                    val lastMessageTimestamp = messageList.lastOrNull()?.timestamp
+                    if (lastMessageTimestamp != null) {
+                        mDbRef.child("user").child(receiverUid!!).child("lastMessageTimestamp")
+                            .setValue(lastMessageTimestamp)
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                 }
             })
+
 
         mDbRef.child("chats").child(receiverRoom!!).child("messages")
             .addChildEventListener(object : ChildEventListener {
