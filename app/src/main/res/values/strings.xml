@@ -3,4 +3,7 @@
     <string name="message_box_hint">Type a message</string>
     <string name="send">Send</string>
     <string name="scroll_to_bottom">Scroll to bottom</string>
+    <string name="sample_username">abbay</string>
+    <string name="last_txt_message_time">Never</string>
+    <string name="nothing" />
 </resources>

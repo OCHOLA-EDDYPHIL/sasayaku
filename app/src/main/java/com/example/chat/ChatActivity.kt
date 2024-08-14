@@ -1,6 +1,5 @@
 package com.example.chat
 
-import android.content.Context
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.ImageView
@@ -10,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -131,7 +129,6 @@ class ChatActivity : AppCompatActivity() {
                 }
             )
 
-
             val updates = hashMapOf<String, Any>(
                 "/chats/$senderRoom/messages/${mDbRef.push().key}" to messageObject,
                 "/chats/$receiverRoom/messages/${mDbRef.push().key}" to messageObject,
@@ -139,7 +136,9 @@ class ChatActivity : AppCompatActivity() {
             )
 
             mDbRef.updateChildren(updates).addOnSuccessListener {
-                messageBox.setText("")
+                messageBox.setText(getString(R.string.nothing))
+            }.addOnFailureListener {
+                Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(this, "Message cannot be blank", Toast.LENGTH_SHORT).show()
@@ -163,7 +162,13 @@ class ChatActivity : AppCompatActivity() {
                         }
                     }
 
-                    override fun onCancelled(error: DatabaseError) {}
+                    override fun onCancelled(error: DatabaseError) {
+                        Toast.makeText(
+                            this@ChatActivity,
+                            "Failed to update messages",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 })
         }
     }
@@ -209,9 +214,10 @@ class ChatActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(this@ChatActivity, "Failed to load messages", Toast.LENGTH_SHORT)
+                        .show()
                 }
             })
-
 
         mDbRef.child("chats").child(receiverRoom!!).child("messages")
             .addChildEventListener(object : ChildEventListener {
@@ -230,7 +236,10 @@ class ChatActivity : AppCompatActivity() {
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
                 override fun onChildRemoved(snapshot: DataSnapshot) {}
                 override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(this@ChatActivity, "Failed to load messages", Toast.LENGTH_SHORT)
+                        .show()
+                }
             })
     }
 }
