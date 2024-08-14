@@ -6,4 +6,7 @@
     <string name="sample_username">abbay</string>
     <string name="last_txt_message_time">Never</string>
     <string name="nothing" />
+    <string name="remember_me">Remember this device</string>
+    <string name="register_link">Create an account</string>
+    <string name="login_link">Already a user? Click here</string>
 </resources>

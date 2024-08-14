@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,7 @@ class Login : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var btnRegister: TextView
     private lateinit var auth: FirebaseAuth
+    private lateinit var chkRememberMe: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +43,7 @@ class Login : AppCompatActivity() {
         edtPassword = findViewById(R.id.edt_password)
         btnLogin = findViewById(R.id.btnLogin)
         btnRegister = findViewById(R.id.btnRegister)
+        chkRememberMe = findViewById<CheckBox>(R.id.chk_remember_me)
 
         btnRegister.setOnClickListener {
             val intent = Intent(this, Register::class.java)
@@ -58,10 +61,29 @@ class Login : AppCompatActivity() {
         // Check if user is already logged in
         val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
         val isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+        val rememberMe = sharedPreferences.getBoolean("rememberMe", false)
         if (isLoggedIn) {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
+            if (!rememberMe) {
+                // Implement timeout logic here
+                val lastLoginTime = sharedPreferences.getLong("lastLoginTime", 0)
+                val currentTime = System.currentTimeMillis()
+                val timeoutDuration = 24 * 60 * 60 * 1000 // 24 hours
+
+                if (currentTime - lastLoginTime > timeoutDuration) {
+                    // Timeout, force logout
+                    val editor = sharedPreferences.edit()
+                    editor.putBoolean("isLoggedIn", false)
+                    editor.apply()
+                } else {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+            } else {
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
         }
     }
 
@@ -90,6 +112,8 @@ class Login : AppCompatActivity() {
                     val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
                     val editor = sharedPreferences.edit()
                     editor.putBoolean("isLoggedIn", true)
+                    editor.putBoolean("rememberMe", chkRememberMe.isChecked)
+                    editor.putLong("lastLoginTime", System.currentTimeMillis())
                     editor.apply()
 
                     // Code for jumping to home activity

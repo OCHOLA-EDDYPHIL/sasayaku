@@ -11,54 +11,65 @@
         android:id="@+id/app_logo"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:src="@drawable/talking"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="150dp"/>
+        android:layout_marginTop="150dp"
+        android:src="@drawable/talking" />
 
     <EditText
         android:id="@+id/edt_email"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_below="@+id/app_logo"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginTop="18dp"
-        android:hint="Email"
-        android:paddingStart="15dp"
         android:background="@drawable/edt_background"
-        android:layout_marginHorizontal="20dp"/>
+        android:hint="Email"
+        android:paddingStart="15dp" />
 
     <EditText
         android:id="@+id/edt_password"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_below="@+id/edt_email"
+        android:layout_marginHorizontal="20dp"
         android:layout_marginTop="18dp"
+        android:background="@drawable/edt_background"
         android:hint="Password"
         android:inputType="textPassword"
-        android:paddingStart="15dp"
-        android:background="@drawable/edt_background"
-        android:layout_marginHorizontal="20dp"/>
+        android:paddingStart="15dp" />
+
+    <CheckBox
+        android:id="@+id/chk_remember_me"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/edt_password"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="18dp"
+        android:text="@string/remember_me"
+        android:fontFamily="casual"/>
 
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/edt_password"
-        android:text="LOGIN"
-        android:textSize="20sp"
-        android:textColor="@color/white"
-        android:background="@drawable/btn_background"
+        android:layout_below="@+id/chk_remember_me"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"/>
+        android:layout_marginTop="30dp"
+        android:background="@drawable/btn_background"
+        android:text="LOGIN"
+        android:textColor="@color/white"
+        android:textSize="20sp" />
 
     <TextView
         android:id="@+id/btnRegister"
         android:layout_width="wrap_content"
-        android:layout_below="@+id/btnLogin"
         android:layout_height="wrap_content"
-        android:text="Create an account"
+        android:layout_below="@+id/btnLogin"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="40dp"
+        android:text="@string/register_link"
+        android:textColor="@color/cyan"
         android:textSize="15sp"
-        android:textStyle="bold"
-        android:textColor="@color/cyan"/>
+        android:fontFamily="casual"
+        android:textStyle="bold|italic" />
 </RelativeLayout>
