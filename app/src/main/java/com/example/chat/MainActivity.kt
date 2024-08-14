@@ -65,14 +65,58 @@ class MainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     userList.clear()
+                    val totalUsers = snapshot.childrenCount
+                    var processedUsers = 0
+
                     for (postSnapshot in snapshot.children) {
                         val currentUser = postSnapshot.getValue(User::class.java)
                         if (auth.currentUser?.uid != currentUser?.uid) {
-                            userList.add(currentUser!!)
+                            val chatRoomId = if (auth.currentUser?.uid!! < currentUser?.uid!!) {
+                                auth.currentUser?.uid + currentUser?.uid
+                            } else {
+                                currentUser?.uid + auth.currentUser?.uid
+                            }
+                            mDbRef.child("chats").child(chatRoomId)
+                                .child("messages").orderByKey().limitToLast(1)
+                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(messageSnapshot: DataSnapshot) {
+                                        if (messageSnapshot.exists()) {
+                                            for (message in messageSnapshot.children) {
+                                                currentUser?.lastMessageTimestamp =
+                                                    message.child("timestamp")
+                                                        .getValue(Long::class.java)
+                                            }
+                                        }
+                                        userList.add(currentUser!!)
+                                        processedUsers++
+                                        if (processedUsers == totalUsers.toInt()) {
+                                            adapter.notifyDataSetChanged()
+                                            progressBar.visibility = View.GONE
+                                        }
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        Log.e(
+                                            "MainActivity",
+                                            "Database error: ${error.message}",
+                                            error.toException()
+                                        )
+                                        AlertUtils.showAlert(
+                                            this@MainActivity,
+                                            "Error",
+                                            "Failed to load users."
+                                        )
+                                        progressBar.visibility = View.GONE
+                                    }
+                                })
+                        } else {
+                            processedUsers++
+                            if (processedUsers == totalUsers.toInt()) {
+                                adapter.notifyDataSetChanged()
+                                progressBar.visibility = View.GONE
+                            }
                         }
                     }
-                    adapter.notifyDataSetChanged()
-                    progressBar.visibility = View.GONE
                 } catch (e: Exception) {
                     Log.e("MainActivity", "Error loading users", e)
                     AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")

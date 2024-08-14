@@ -89,8 +89,7 @@ class Register : AppCompatActivity() {
                     finish()
                     startActivity(intent)
                 } else {
-                    val exception = task.exception
-                    when (exception) {
+                    when (val exception = task.exception) {
                         is FirebaseAuthUserCollisionException -> {
                             AlertUtils.showAlert(
                                 this,
@@ -129,6 +128,6 @@ class Register : AppCompatActivity() {
 
     private fun addUserToDatabase(name: String, email: String, uid: String) {
         val mDbRef = TubongeDb.getDatabase().getReference()
-        mDbRef.child("user").child(uid).setValue(User(name, email, uid))
+        mDbRef.child("user").child(uid).setValue(User(name, email, uid, null))
     }
 }
