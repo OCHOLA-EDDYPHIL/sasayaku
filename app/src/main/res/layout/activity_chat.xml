@@ -73,7 +73,7 @@
         android:id="@+id/fabScrollToBottom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="10dp"
         android:contentDescription="@string/scroll_to_bottom"
         android:src="@drawable/ic_scroll_to_bottom"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
