@@ -2,4 +2,5 @@
     <string name="app_name">Tubonge</string>
     <string name="message_box_hint">Type a message</string>
     <string name="send">Send</string>
+    <string name="scroll_to_bottom">Scroll to bottom</string>
 </resources>

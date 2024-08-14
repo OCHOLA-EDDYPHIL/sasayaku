@@ -1,14 +1,16 @@
 package com.example.chat
 
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -23,6 +25,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var chatRecyclerView: RecyclerView
     private lateinit var messageBox: EditText
     private lateinit var sendButton: ImageView
+    private lateinit var fabScrollToBottom: FloatingActionButton
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var messageList: ArrayList<Message>
     private lateinit var mDbRef: DatabaseReference
@@ -43,6 +46,7 @@ class ChatActivity : AppCompatActivity() {
         initializeFirebaseDatabaseReference()
         setupToolbar()
         setupRecyclerView()
+        setupFloatingActionButton()
         loadMessagesFromFirebase()
 
         sendButton.setOnClickListener {
@@ -104,6 +108,13 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
+    private fun setupFloatingActionButton() {
+        fabScrollToBottom = findViewById(R.id.fabScrollToBottom)
+        fabScrollToBottom.setOnClickListener {
+            chatRecyclerView.scrollToPosition(messageList.size - 1)
+        }
+    }
+
     private fun sendMessage() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
@@ -127,6 +138,11 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
             messageBox.setText("")
+        }
+        else {
+        // Toast message that message was blank
+            Toast.makeText(this, "Message cannot be blank", Toast.LENGTH_SHORT).show()
+
         }
     }
 
@@ -167,8 +183,6 @@ class ChatActivity : AppCompatActivity() {
                         val message = postSnapshot.getValue(Message::class.java)
                         message?.id = postSnapshot.key
                         message?.status = message?.status ?: MessageStatus.SENT
-
-                        Log.d("ChatActivity", "Message: $message.toString()")
 
                         val messageDate = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
                             .format(Date(message?.timestamp ?: 0))
