@@ -1,11 +1,14 @@
 package com.example.chat
 
+import android.app.AlertDialog
 import android.content.Context
+import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.chat.NetworkUtils.isNetworkAvailable
 import com.google.firebase.auth.FirebaseAuth
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -56,6 +59,7 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
         return messageList.size
     }
 
+    // Add a long-press listener to the message views in MessageAdapter
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val currentMessage = messageList[position]
         val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -71,11 +75,19 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
                     MessageStatus.SENT -> "Sent"
                     MessageStatus.WAITING -> "Waiting"
                 }
+                holder.itemView.setOnLongClickListener {
+                    showDeleteDialog(currentMessage)
+                    true
+                }
             }
 
             is ReceiveViewHolder -> {
                 holder.receiveMessage.text = currentMessage.message
                 holder.receiveTimestamp.text = time
+                holder.itemView.setOnLongClickListener {
+                    showDeleteDialog(currentMessage)
+                    true
+                }
             }
 
             is DateViewHolder -> {
@@ -92,6 +104,39 @@ class MessageAdapter(val context: Context, val messageList: ArrayList<Message>) 
             }
         }
     }
+
+    private fun showDeleteDialog(message: Message) {
+        val currentTime = System.currentTimeMillis()
+        val thirtyMinutesInMillis = 30 * 60 * 1000
+        val canDeleteForEveryone = currentTime - (message.timestamp ?: 0) <= thirtyMinutesInMillis
+
+        val dialogMessage = if (canDeleteForEveryone) {
+            "Are you sure you want to delete this message for everyone?"
+        } else {
+            "Are you sure you want to delete this message for you?"
+        }
+
+        val positiveButtonText = if (canDeleteForEveryone) {
+            "Delete for Everyone"
+        } else {
+            "Delete for You"
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Delete Message")
+            .setMessage(dialogMessage)
+            .setPositiveButton(positiveButtonText) { _, _ ->
+                if (message.status == MessageStatus.WAITING) {
+                    (context as ChatActivity).deleteWaitingMessage(message)
+                } else {
+                    (context as ChatActivity).deleteMessage(message)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+
 
     class SentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val sentMessage: TextView = itemView.findViewById(R.id.txt_sent_message)

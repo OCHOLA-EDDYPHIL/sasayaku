@@ -118,6 +118,7 @@ class ChatActivity : AppCompatActivity() {
         if (message.isNotEmpty()) {
             val senderUid = TubongeDb.getAuth().currentUser?.uid
             val timestamp = System.currentTimeMillis()
+            val messageId = mDbRef.push().key
             val messageObject = Message(
                 message,
                 senderUid,
@@ -130,8 +131,8 @@ class ChatActivity : AppCompatActivity() {
             )
 
             val updates = hashMapOf<String, Any>(
-                "/chats/$senderRoom/messages/${mDbRef.push().key}" to messageObject,
-                "/chats/$receiverRoom/messages/${mDbRef.push().key}" to messageObject,
+                "/chats/$senderRoom/messages/$messageId" to messageObject,
+                "/chats/$receiverRoom/messages/$messageId" to messageObject,
                 "/user/$senderUid/lastMessageTimestamp" to timestamp
             )
 
@@ -175,7 +176,9 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateWaitingMessages()
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            updateWaitingMessages()
+        }
     }
 
     private fun loadMessagesFromFirebase() {
@@ -241,5 +244,37 @@ class ChatActivity : AppCompatActivity() {
                         .show()
                 }
             })
+    }
+
+    // Add a method to handle message deletion in ChatActivity
+    fun deleteMessage(message: Message) {
+        val currentTime = System.currentTimeMillis()
+        val thirtyMinutesInMillis = 30 * 60 * 1000
+
+        if (currentTime - (message.timestamp ?: 0) <= thirtyMinutesInMillis) {
+            // Delete for both sender and receiver
+            mDbRef.child("chats").child(senderRoom!!).child("messages").child(message.id!!)
+                .removeValue()
+            mDbRef.child("chats").child(receiverRoom!!).child("messages").child(message.id!!)
+                .removeValue()
+        } else {
+            // Delete only for sender
+            mDbRef.child("chats").child(senderRoom!!).child("messages").child(message.id!!)
+                .removeValue()
+        }
+
+        messageList.remove(message)
+        messageAdapter.notifyDataSetChanged()
+    }
+
+    fun deleteWaitingMessage(message: Message) {
+        if (message.status == MessageStatus.WAITING) {
+            mDbRef.child("chats").child(senderRoom!!).child("messages").child(message.id!!)
+                .removeValue()
+            mDbRef.child("chats").child(receiverRoom!!).child("messages").child(message.id!!)
+                .removeValue()
+            messageList.remove(message)
+            messageAdapter.notifyDataSetChanged()
+        }
     }
 }
