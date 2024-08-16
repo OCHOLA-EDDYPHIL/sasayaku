@@ -41,6 +41,13 @@ class ChatActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_chat)
 
+        val chatId = intent.getStringExtra("chatId")
+        if (chatId != null) {
+            NotificationUtils.cancelNotification(this, chatId)
+        }
+
+        NotificationUtils.createNotificationChannel(this)
+
         initializeFirebaseDatabaseReference()
         setupToolbar()
         setupRecyclerView()
@@ -187,6 +194,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     messageList.clear()
                     var lastDate: String? = null
+                    var hasUnreadMessages = false
                     for (postSnapshot in snapshot.children) {
                         val message = postSnapshot.getValue(Message::class.java)
                         message?.id = postSnapshot.key
@@ -202,6 +210,9 @@ class ChatActivity : AppCompatActivity() {
                         }
                         if (!message?.message.isNullOrEmpty()) {
                             message?.let { messageList.add(it) }
+                            if (message?.status != MessageStatus.READ) {
+                                hasUnreadMessages = true
+                            }
                         }
                     }
                     messageAdapter.notifyDataSetChanged()
@@ -214,6 +225,17 @@ class ChatActivity : AppCompatActivity() {
                         mDbRef.child("user").child(receiverUid!!).child("lastMessageTimestamp")
                             .setValue(lastMessageTimestamp)
                     }
+
+                    // Trigger notification
+                    val senderName = intent.getStringExtra("name") ?: "Unknown"
+                    val actualMessageCount = messageList.count { it.message != null }
+                    NotificationUtils.showNotification(
+                        this@ChatActivity,
+                        senderName,
+                        actualMessageCount,
+                        senderRoom!!,
+                        hasUnreadMessages
+                    )
                 }
 
                 override fun onCancelled(error: DatabaseError) {
