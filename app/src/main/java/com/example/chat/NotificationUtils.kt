@@ -37,6 +37,7 @@ object NotificationUtils {
         senderName: String,
         messageCount: Int,
         chatId: String,
+        uid: String,
         hasUnreadMessages: Boolean
     ) {
         if (!hasUnreadMessages) return
@@ -53,6 +54,8 @@ object NotificationUtils {
         val intent = Intent(context, ChatActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("chatId", chatId)
+            putExtra("name", senderName)
+            putExtra("uid", uid)
         }
         val pendingIntent: PendingIntent =
             PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)

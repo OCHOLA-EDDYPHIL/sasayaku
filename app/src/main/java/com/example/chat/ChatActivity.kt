@@ -1,6 +1,7 @@
 package com.example.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
@@ -42,14 +43,16 @@ class ChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chat)
 
         val chatId = intent.getStringExtra("chatId")
+        val senderName = intent.getStringExtra("name")
+        val uid = intent.getStringExtra("uid")
         if (chatId != null) {
             NotificationUtils.cancelNotification(this, chatId)
         }
 
         NotificationUtils.createNotificationChannel(this)
 
-        initializeFirebaseDatabaseReference()
-        setupToolbar()
+        initializeFirebaseDatabaseReference(uid)
+        setupToolbar(senderName)
         setupRecyclerView()
         setupFloatingActionButton()
         loadMessagesFromFirebase()
@@ -59,8 +62,7 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun initializeFirebaseDatabaseReference() {
-        val receiverUid = intent.getStringExtra("uid")
+    private fun initializeFirebaseDatabaseReference(receiverUid: String?) {
         val senderUid = TubongeDb.getAuth().currentUser?.uid
         mDbRef = TubongeDb.getDatabase().getReference()
 
@@ -68,12 +70,11 @@ class ChatActivity : AppCompatActivity() {
         receiverRoom = senderUid + receiverUid
     }
 
-    private fun setupToolbar() {
-        val receiverName = intent.getStringExtra("name")
+    private fun setupToolbar(senderName: String?) {
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = receiverName
+        supportActionBar?.title = senderName
 
         toolbar.setNavigationOnClickListener {
             finish()
@@ -228,12 +229,14 @@ class ChatActivity : AppCompatActivity() {
 
                     // Trigger notification
                     val senderName = intent.getStringExtra("name") ?: "Unknown"
+                    val uid = intent.getStringExtra("uid")
                     val actualMessageCount = messageList.count { it.message != null }
                     NotificationUtils.showNotification(
                         this@ChatActivity,
                         senderName,
                         actualMessageCount,
                         senderRoom!!,
+                        uid ?: return,
                         hasUnreadMessages
                     )
                 }
