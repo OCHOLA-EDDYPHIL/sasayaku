@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this).apply {
             setTitle("Confirm")
             setMessage("Are you sure you want to logout?")
-            setPositiveButton("Yes") { dialog: DialogInterface, _: Int ->
+            setPositiveButton("Yes") { _: DialogInterface, _: Int ->
                 val sharedPreferences = getSharedPreferences("ChatApp", Context.MODE_PRIVATE)
                 val editor = sharedPreferences.edit()
                 editor.putBoolean("isLoggedIn", false)
