@@ -125,11 +125,13 @@ class ChatActivity : AppCompatActivity() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
             val senderUid = TubongeDb.getAuth().currentUser?.uid
+            val senderName = TubongeDb.getAuth().currentUser?.displayName
             val timestamp = System.currentTimeMillis()
             val messageId = mDbRef.push().key
             val messageObject = Message(
                 message,
                 senderUid,
+                senderName,
                 timestamp,
                 status = if (NetworkUtils.isNetworkAvailable(this)) {
                     MessageStatus.SENT
@@ -138,7 +140,7 @@ class ChatActivity : AppCompatActivity() {
                 }
             )
 
-            val updates = hashMapOf<String, Any>(
+            val updates = hashMapOf(
                 "/chats/$senderRoom/messages/$messageId" to messageObject,
                 "/chats/$receiverRoom/messages/$messageId" to messageObject,
                 "/user/$senderUid/lastMessageTimestamp" to timestamp
@@ -204,7 +206,7 @@ class ChatActivity : AppCompatActivity() {
                             .format(Date(message?.timestamp ?: 0))
                         if (lastDate != messageDate) {
                             if (message?.timestamp != null) {
-                                messageList.add(Message(null, null, message.timestamp, true))
+                                messageList.add(Message(null, null,null , message.timestamp, true))
                                 lastDate = messageDate
                             }
                         }
@@ -316,8 +318,11 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun triggerNotification(message: Message) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val intent = Intent(this, ChatActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("uid", message.senderId)
+            putExtra("name", message.senderName)
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
@@ -325,8 +330,7 @@ class ChatActivity : AppCompatActivity() {
 
         val notificationBuilder = NotificationCompat.Builder(this, "chat_notifications")
             .setSmallIcon(R.drawable.message_foreground)
-            .setContentTitle("New Message")
-            .setContentText(message.message)
+            .setContentTitle("New Message from ${message.senderName}")
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
@@ -341,5 +345,10 @@ class ChatActivity : AppCompatActivity() {
             notificationManager.createNotificationChannel(channel)
         }
         notificationManager.notify(0, notificationBuilder.build())
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 }

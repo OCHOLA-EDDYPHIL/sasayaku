@@ -26,14 +26,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "Message received from: ${remoteMessage.from}")
 
         val senderName = remoteMessage.data["senderName"]
-        val message = remoteMessage.data["message"]
+        val messageCount = remoteMessage.data["messageCount"]?.toInt() ?: 1
 
-        Log.d("FCM", "Sender: $senderName, Message: $message")
+        Log.d("FCM", "Sender: $senderName, Message Count: $messageCount")
 
-        sendNotification(senderName, message)
+        sendNotification(senderName, messageCount)
     }
 
-    private fun sendNotification(senderName: String?, message: String?) {
+    private fun sendNotification(senderName: String?, messageCount: Int) {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "chat_notifications"
@@ -47,8 +47,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val intent = Intent(this, ChatActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("senderName", senderName)
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
@@ -57,7 +59,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.message_foreground)
             .setContentTitle("New Message from $senderName")
-            .setContentText(message)
+            .setContentText("You have $messageCount new message(s)")
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
