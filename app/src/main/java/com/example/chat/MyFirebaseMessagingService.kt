@@ -10,7 +10,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -27,14 +26,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "Message received from: ${remoteMessage.from}")
 
         val senderName = remoteMessage.data["senderName"]
-        val messageCount = remoteMessage.data["messageCount"]?.toInt() ?: 0
+        val message = remoteMessage.data["message"]
 
-        Log.d("FCM", "Sender: $senderName, Message Count: $messageCount")
+        Log.d("FCM", "Sender: $senderName, Message: $message")
 
-        sendNotification(senderName, messageCount)
+        sendNotification(senderName, message)
     }
 
-    private fun sendNotification(senderName: String?, messageCount: Int) {
+    private fun sendNotification(senderName: String?, message: String?) {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "chat_notifications"
@@ -57,8 +56,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.message_foreground)
-            .setContentTitle("New Messages")
-            .setContentText("You have $messageCount new messages from $senderName")
+            .setContentTitle("New Message from $senderName")
+            .setContentText(message)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 

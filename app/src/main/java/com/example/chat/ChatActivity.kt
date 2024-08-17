@@ -298,8 +298,10 @@ class ChatActivity : AppCompatActivity() {
                         mDbRef.child("chats").child(senderRoom!!).child("messages")
                             .child(message.id!!).child("status").setValue(MessageStatus.DELIVERED)
 
-                        // Trigger notification
-                        triggerNotification(message)
+                        // Trigger notification only if the message is not from the current user
+                        if (message.senderId != TubongeDb.getAuth().currentUser?.uid) {
+                            triggerNotification(message)
+                        }
                     }
                 }
 
