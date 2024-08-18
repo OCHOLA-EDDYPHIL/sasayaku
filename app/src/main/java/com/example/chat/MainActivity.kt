@@ -34,6 +34,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Start NotificationService
+        val notificationServiceIntent = Intent(this, NotificationService::class.java)
+        startService(notificationServiceIntent)
+
         // Request FCM token manually
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
