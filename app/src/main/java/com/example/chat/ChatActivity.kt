@@ -335,6 +335,7 @@ class ChatActivity : AppCompatActivity() {
 
                         // Trigger notification only if the message is not from the current user
                         if (message.senderId != TubongeDb.getAuth().currentUser?.uid) {
+                            message.senderId?.let { resetMessageCountForDifferentUser(it) }
                             triggerNotification(message)
                         }
                     }
@@ -350,13 +351,22 @@ class ChatActivity : AppCompatActivity() {
             })
     }
 
+    private val messageCountMap = mutableMapOf<String, Int>()
+
     private fun triggerNotification(message: Message) {
+        val senderId = message.senderId ?: return
+        val senderName = message.senderName
+
+        // Increment the message count for the sender
+        val messageCount = messageCountMap.getOrDefault(senderId, 0) + 1
+        messageCountMap[senderId] = messageCount
+
         val intent = Intent(this, ChatActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("uid", message.senderId)
-            putExtra("name", message.senderName)
+            putExtra("uid", senderId)
+            putExtra("name", senderName)
         }
-        Log.d("ChatActivity", "Intent created with senderName: ${message.senderName}")
+        Log.d("ChatActivity", "Intent created with senderName: $senderName")
 
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
@@ -364,9 +374,16 @@ class ChatActivity : AppCompatActivity() {
         )
         Log.d("ChatActivity", "PendingIntent created: $pendingIntent")
 
+        val notificationContent = if (messageCount > 1) {
+            "You have $messageCount new messages from $senderName"
+        } else {
+            message.message
+        }
+
         val notificationBuilder = NotificationCompat.Builder(this, "chat_notifications")
             .setSmallIcon(R.drawable.message_foreground)
-            .setContentTitle("New Message from ${message.senderName}")
+            .setContentTitle("New Message from $senderName")
+            .setContentText(notificationContent)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
@@ -380,7 +397,14 @@ class ChatActivity : AppCompatActivity() {
             )
             notificationManager.createNotificationChannel(channel)
         }
-        notificationManager.notify(0, notificationBuilder.build())
+
+        // Use the sender's UID as the unique notification ID
+        val notificationId = senderId.hashCode()
+        notificationManager.notify(notificationId, notificationBuilder.build())
+    }
+
+    private fun resetMessageCountForDifferentUser(newSenderId: String) {
+        messageCountMap.keys.filter { it != newSenderId }.forEach { messageCountMap[it] = 0 }
     }
 
     override fun onBackPressed() {
