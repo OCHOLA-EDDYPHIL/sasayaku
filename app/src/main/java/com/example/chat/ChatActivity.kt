@@ -72,7 +72,7 @@ class ChatActivity : AppCompatActivity() {
     private fun initializeFirebaseDatabaseReference() {
         val receiverUid = intent.getStringExtra("uid")
         val senderUid = TubongeDb.getAuth().currentUser?.uid
-        mDbRef = TubongeDb.getDatabase().getReference()
+        mDbRef = getFirebaseDatabaseReference()
 
         senderRoom = receiverUid + senderUid
         receiverRoom = senderUid + receiverUid
@@ -112,10 +112,7 @@ class ChatActivity : AppCompatActivity() {
                     if (message.status != MessageStatus.READ && message.senderId != TubongeDb.getAuth().currentUser?.uid) {
                         message.id?.let { messageId ->
                             message.status = MessageStatus.READ
-                            mDbRef.child("chats").child(senderRoom!!).child("messages")
-                                .child(messageId).child("status").setValue(MessageStatus.READ)
-                            mDbRef.child("chats").child(receiverRoom!!).child("messages")
-                                .child(messageId).child("status").setValue(MessageStatus.READ)
+                            updateMessageStatus(messageId, MessageStatus.READ)
                         }
                     }
                 }
@@ -173,7 +170,7 @@ class ChatActivity : AppCompatActivity() {
         val uid = currentUser?.uid
 
         if (uid != null) {
-            val mDbRef = TubongeDb.getDatabase().getReference()
+            val mDbRef = getFirebaseDatabaseReference()
             mDbRef.child("user").child(uid)
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
@@ -206,10 +203,7 @@ class ChatActivity : AppCompatActivity() {
                             val message = postSnapshot.getValue(Message::class.java)
                             message?.id = postSnapshot.key
                             message?.status = MessageStatus.SENT
-                            mDbRef.child("chats").child(senderRoom!!).child("messages")
-                                .child(message?.id!!).child("status").setValue(MessageStatus.SENT)
-                            mDbRef.child("chats").child(receiverRoom!!).child("messages")
-                                .child(message.id!!).setValue(message)
+                            updateMessageStatus(message?.id!!, MessageStatus.SENT)
                         }
                     }
 
@@ -243,7 +237,7 @@ class ChatActivity : AppCompatActivity() {
         mDbRef.child("chats").child(senderRoom!!).child("messages")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    messageList.clear()
+                    val newMessageList = ArrayList<Message>()
                     var lastDate: String? = null
                     for (postSnapshot in snapshot.children) {
                         val message = postSnapshot.getValue(Message::class.java)
@@ -254,16 +248,28 @@ class ChatActivity : AppCompatActivity() {
                             .format(Date(message?.timestamp ?: 0))
                         if (lastDate != messageDate) {
                             if (message?.timestamp != null) {
-                                messageList.add(Message(null, null, null, message.timestamp, true))
+                                newMessageList.add(
+                                    Message(
+                                        null,
+                                        null,
+                                        null,
+                                        message.timestamp,
+                                        true
+                                    )
+                                )
                                 lastDate = messageDate
                             }
                         }
                         if (!message?.message.isNullOrEmpty()) {
-                            message?.let { messageList.add(it) }
+                            message?.let { newMessageList.add(it) }
                         }
                     }
-                    messageAdapter.notifyDataSetChanged()
-                    chatRecyclerView.scrollToPosition(messageList.size - 1)
+                    if (newMessageList != messageList) {
+                        messageList.clear()
+                        messageList.addAll(newMessageList)
+                        messageAdapter.notifyDataSetChanged()
+                        chatRecyclerView.scrollToPosition(messageList.size - 1)
+                    }
 
                     // Update last message timestamp for receiver
                     val receiverUid = intent.getStringExtra("uid")
@@ -286,11 +292,7 @@ class ChatActivity : AppCompatActivity() {
                     val message = snapshot.getValue(Message::class.java)
                     message?.id = snapshot.key
                     if (message?.status == MessageStatus.SENT) {
-                        message.status = MessageStatus.DELIVERED
-                        mDbRef.child("chats").child(receiverRoom!!).child("messages")
-                            .child(message.id!!).child("status").setValue(MessageStatus.DELIVERED)
-                        mDbRef.child("chats").child(senderRoom!!).child("messages")
-                            .child(message.id!!).child("status").setValue(MessageStatus.DELIVERED)
+                        updateMessageStatus(message.id!!, MessageStatus.DELIVERED)
                     }
                 }
 
@@ -338,5 +340,18 @@ class ChatActivity : AppCompatActivity() {
     override fun onBackPressed() {
         super.onBackPressed()
         finish()
+    }
+
+    // Extract Firebase database reference initialization into a separate method
+    private fun getFirebaseDatabaseReference(): DatabaseReference {
+        return TubongeDb.getDatabase().getReference()
+    }
+
+    // Create a method to update message status
+    private fun updateMessageStatus(messageId: String, status: MessageStatus) {
+        mDbRef.child("chats").child(senderRoom!!).child("messages")
+            .child(messageId).child("status").setValue(status)
+        mDbRef.child("chats").child(receiverRoom!!).child("messages")
+            .child(messageId).child("status").setValue(status)
     }
 }
