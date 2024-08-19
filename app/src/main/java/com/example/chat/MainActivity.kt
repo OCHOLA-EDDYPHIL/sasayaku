@@ -259,6 +259,13 @@ class MainActivity : AppCompatActivity() {
         // Mark this message as processed
         processedMessageIds.add(messageId)
 
+        // Check if the user is currently in the chat with the sender
+        val currentUserUid = TubongeDb.getAuth().currentUser?.uid
+        val senderRoom = senderId + currentUserUid
+        if (ChatActivity.isInChat && ChatActivity.senderRoom == senderRoom) {
+            return
+        }
+
         // Increment the message count for the sender
         val currentCount = messageCountMap.getOrDefault(senderId, 0) + 1
         messageCountMap[senderId] = currentCount

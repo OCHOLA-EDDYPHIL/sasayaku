@@ -1,11 +1,5 @@
 package com.example.chat
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.EditText
@@ -14,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -37,10 +30,10 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var messageList: ArrayList<Message>
     private lateinit var mDbRef: DatabaseReference
 
-    var receiverRoom: String? = null
-    var senderRoom: String? = null
-
     companion object {
+        var receiverRoom: String? = null
+        var senderRoom: String? = null
+        var isInChat: Boolean = false
         const val DATE_FORMAT = "yyyyMMdd"
         const val TIME_FORMAT = "hh:mm a"
     }
@@ -222,6 +215,12 @@ class ChatActivity : AppCompatActivity() {
         if (NetworkUtils.isNetworkAvailable(this)) {
             updateWaitingMessages()
         }
+        isInChat = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isInChat = false
     }
 
     private fun loadMessagesFromFirebase() {
@@ -319,93 +318,6 @@ class ChatActivity : AppCompatActivity() {
             messageAdapter.notifyDataSetChanged()
         }
     }
-
-//    private fun listenForNewMessages() {
-//        mDbRef.child("chats").child(receiverRoom!!).child("messages")
-//            .addChildEventListener(object : ChildEventListener {
-//                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-//                    val message = snapshot.getValue(Message::class.java)
-//                    message?.id = snapshot.key
-//                    if (message?.status == MessageStatus.SENT) {
-//                        message.status = MessageStatus.DELIVERED
-//                        mDbRef.child("chats").child(receiverRoom!!).child("messages")
-//                            .child(message.id!!).child("status").setValue(MessageStatus.DELIVERED)
-//                        mDbRef.child("chats").child(senderRoom!!).child("messages")
-//                            .child(message.id!!).child("status").setValue(MessageStatus.DELIVERED)
-//
-//                        // Trigger notification only if the message is not from the current user
-//                        if (message.senderId != TubongeDb.getAuth().currentUser?.uid) {
-//                            message.senderId?.let { resetMessageCountForDifferentUser(it) }
-//                            triggerNotification(message)
-//                        }
-//                    }
-//                }
-//
-//                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
-//                override fun onChildRemoved(snapshot: DataSnapshot) {}
-//                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-//                override fun onCancelled(error: DatabaseError) {
-//                    Toast.makeText(this@ChatActivity, "Failed to load messages", Toast.LENGTH_SHORT)
-//                        .show()
-//                }
-//            })
-//    }
-
-//    private val messageCountMap = mutableMapOf<String, Int>()
-
-//    private fun triggerNotification(message: Message) {
-//        val senderId = message.senderId ?: return
-//        val senderName = message.senderName
-//
-//        // Increment the message count for the sender
-//        val messageCount = messageCountMap.getOrDefault(senderId, 0) + 1
-//        messageCountMap[senderId] = messageCount
-//
-//        val intent = Intent(this, ChatActivity::class.java).apply {
-//            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//            putExtra("uid", senderId)
-//            putExtra("name", senderName)
-//        }
-//        Log.d("ChatActivity", "Intent created with senderName: $senderName")
-//
-//        val pendingIntent = PendingIntent.getActivity(
-//            this, 0, intent,
-//            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-//        )
-//        Log.d("ChatActivity", "PendingIntent created: $pendingIntent")
-//
-//        val notificationContent = if (messageCount > 1) {
-//            "You have $messageCount new messages from $senderName"
-//        } else {
-//            message.message
-//        }
-//
-//        val notificationBuilder = NotificationCompat.Builder(this, "chat_notifications")
-//            .setSmallIcon(R.drawable.message_foreground)
-//            .setContentTitle("New Message from $senderName")
-//            .setContentText(notificationContent)
-//            .setAutoCancel(true)
-//            .setContentIntent(pendingIntent)
-//
-//        val notificationManager =
-//            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            val channel = NotificationChannel(
-//                "chat_notifications",
-//                "Chat Notifications",
-//                NotificationManager.IMPORTANCE_HIGH
-//            )
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//
-//        // Use the sender's UID as the unique notification ID
-//        val notificationId = senderId.hashCode()
-//        notificationManager.notify(notificationId, notificationBuilder.build())
-//    }
-
-//    private fun resetMessageCountForDifferentUser(newSenderId: String) {
-//        messageCountMap.keys.filter { it != newSenderId }.forEach { messageCountMap[it] = 0 }
-//    }
 
     override fun onBackPressed() {
         super.onBackPressed()
