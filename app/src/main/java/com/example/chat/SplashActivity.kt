@@ -3,15 +3,25 @@ package com.example.chat
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
+
+    companion object {
+        const val SPLASH_DELAY = 3000L // 3 seconds delay
+    }
+
+    private val splashViewModel: SplashViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
@@ -25,19 +35,26 @@ class SplashActivity : AppCompatActivity() {
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
         }
-        Handler(Looper.getMainLooper()).postDelayed({
+
+        splashViewModel.startSplashScreen(this)
+    }
+}
+
+class SplashViewModel : ViewModel() {
+
+    fun startSplashScreen(activity: SplashActivity) {
+        activity.lifecycleScope.launch {
+            delay(SplashActivity.SPLASH_DELAY)
             val user = FirebaseAuth.getInstance().currentUser
-            if (user != null) {
-                // User is logged in, start MainActivity
-                startActivity(Intent(this, MainActivity::class.java))
+            val intent = if (user != null) {
+                Intent(activity, MainActivity::class.java)
             } else {
-                // User is not logged in, start Login activity
-                startActivity(Intent(this, Login::class.java))
+                Intent(activity, Login::class.java)
             }
-            finish()
-        }, 3000) // 3 seconds delay
+            activity.startActivity(intent)
+            activity.finish()
+        }
     }
 }
