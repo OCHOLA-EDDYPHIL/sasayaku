@@ -88,12 +88,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadUsersFromFirebase() {
-        progressBar.visibility = View.VISIBLE
-
-        if (!NetworkUtils.isNetworkAvailable(this)) {
-            AlertUtils.showAlert(this, "Error", "No internet connection.")
+        if (!isNetworkAvailable()) {
+            showAlert("Error", "No internet connection.")
             return
         }
+        fetchUsersFromFirebase()
+    }
+
+    private fun refreshUserData() {
+        if (!isNetworkAvailable()) {
+            showAlert("Error", "No internet connection.")
+            return
+        }
+        fetchUsersFromFirebase()
+    }
+
+    private fun fetchUsersFromFirebase() {
+        progressBar.visibility = View.VISIBLE
         mDbRef.child("user").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
@@ -115,56 +126,24 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.e("MainActivity", "Error loading users", e)
-                    AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
+                    showAlert("Error", "Failed to load users.")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Log.e("MainActivity", "Database error: ${error.message}", error.toException())
-                AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
+                showAlert("Error", "Failed to load users.")
                 progressBar.visibility = View.GONE
             }
         })
     }
 
-    private fun refreshUserData() {
-        progressBar.visibility = View.VISIBLE
+    private fun isNetworkAvailable(): Boolean {
+        return NetworkUtils.isNetworkAvailable(this)
+    }
 
-        if (!NetworkUtils.isNetworkAvailable(this)) {
-            AlertUtils.showAlert(this, "Error", "No internet connection.")
-            return
-        }
-        mDbRef.child("user").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    userList.clear()
-                    val totalUsers = snapshot.childrenCount
-                    var processedUsers = 0
-
-                    for (postSnapshot in snapshot.children) {
-                        val currentUser = postSnapshot.getValue(User::class.java)
-                        if (auth.currentUser?.uid != currentUser?.uid) {
-                            userList.add(currentUser!!)
-                        }
-                        processedUsers++
-                        if (processedUsers == totalUsers.toInt()) {
-                            userList.sortByDescending { it.lastMessageTimestamp }
-                            adapter.notifyDataSetChanged()
-                            progressBar.visibility = View.GONE
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "Error loading users", e)
-                    AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("MainActivity", "Database error: ${error.message}", error.toException())
-                AlertUtils.showAlert(this@MainActivity, "Error", "Failed to load users.")
-                progressBar.visibility = View.GONE
-            }
-        })
+    private fun showAlert(title: String, message: String) {
+        AlertUtils.showAlert(this, title, message)
     }
 
     override fun onResume() {
