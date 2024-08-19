@@ -8,6 +8,8 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -71,6 +73,18 @@ class MainActivity : AppCompatActivity() {
 
         loadUsersFromFirebase()
         listenForNewMessages()
+    }
+
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            refreshUserData()
+            refreshHandler.postDelayed(this, REFRESH_INTERVAL)
+        }
+    }
+
+    companion object {
+        private const val REFRESH_INTERVAL = 300000L // 5 minutes
     }
 
     private fun loadUsersFromFirebase() {
@@ -155,7 +169,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        refreshUserData()
+        refreshHandler.post(refreshRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        refreshHandler.removeCallbacks(refreshRunnable)
     }
 
     private fun logout() {

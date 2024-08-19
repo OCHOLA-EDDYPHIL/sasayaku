@@ -1,6 +1,8 @@
 package com.example.chat
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.WindowManager
 import android.widget.EditText
@@ -30,6 +32,13 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var messageList: ArrayList<Message>
     private lateinit var mDbRef: DatabaseReference
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            loadMessagesFromFirebase()
+            refreshHandler.postDelayed(this, REFRESH_INTERVAL)
+        }
+    }
 
     companion object {
         var receiverRoom: String? = null
@@ -37,6 +46,7 @@ class ChatActivity : AppCompatActivity() {
         var isInChat: Boolean = false
         const val DATE_FORMAT = "yyyyMMdd"
         const val TIME_FORMAT = "hh:mm a"
+        private const val REFRESH_INTERVAL = 300000L // 5 minutes
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -220,11 +230,13 @@ class ChatActivity : AppCompatActivity() {
             updateWaitingMessages()
         }
         isInChat = true
+        refreshHandler.post(refreshRunnable)
     }
 
     override fun onPause() {
         super.onPause()
         isInChat = false
+        refreshHandler.removeCallbacks(refreshRunnable)
     }
 
     private fun loadMessagesFromFirebase() {
