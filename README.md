@@ -32,7 +32,7 @@ This project is a chat application built using Kotlin and Java. It uses Firebase
 
 ## Usage
 
-1. Register or log in with your Firebase account.
+1. Register or log in with your email account.
 2. Start a new chat or continue an existing conversation.
 3. Send and receive messages in real-time.
 4. Delete messages if needed.
