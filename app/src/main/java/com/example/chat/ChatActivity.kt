@@ -2,6 +2,7 @@ package com.example.chat
 
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
@@ -42,13 +43,16 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_chat)
-
+        // Disable screenshots
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
         initializeFirebaseDatabaseReference()
         setupToolbar()
         setupRecyclerView()
         setupFloatingActionButton()
         loadMessagesFromFirebase()
-//        listenForNewMessages()
 
         sendButton.setOnClickListener {
             sendMessage()
