@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -29,10 +30,10 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var messageList: ArrayList<Message>
     private lateinit var mDbRef: DatabaseReference
 
-    var receiverRoom: String? = null
-    var senderRoom: String? = null
-
     companion object {
+        var receiverRoom: String? = null
+        var senderRoom: String? = null
+        var isInChat: Boolean = false
         const val DATE_FORMAT = "yyyyMMdd"
         const val TIME_FORMAT = "hh:mm a"
     }
@@ -56,6 +57,7 @@ class ChatActivity : AppCompatActivity() {
         setupRecyclerView()
         setupFloatingActionButton()
         loadMessagesFromFirebase()
+//        listenForNewMessages()
 
         sendButton.setOnClickListener {
             sendMessage()
@@ -125,32 +127,65 @@ class ChatActivity : AppCompatActivity() {
         val message = messageBox.text.toString().trim()
         if (message.isNotEmpty()) {
             val senderUid = TubongeDb.getAuth().currentUser?.uid
-            val timestamp = System.currentTimeMillis()
-            val messageId = mDbRef.push().key
-            val messageObject = Message(
-                message,
-                senderUid,
-                timestamp,
-                status = if (NetworkUtils.isNetworkAvailable(this)) {
-                    MessageStatus.SENT
-                } else {
-                    MessageStatus.WAITING
+            getCurrentUserName { senderName ->
+                Log.d("sendMessage", "Sender UID: $senderUid, Sender Name: $senderName")
+                val timestamp = System.currentTimeMillis()
+                val messageId = mDbRef.push().key
+                val messageObject = Message(
+                    message,
+                    senderUid,
+                    senderName,
+                    timestamp,
+                    status = if (NetworkUtils.isNetworkAvailable(this)) {
+                        MessageStatus.SENT
+                    } else {
+                        MessageStatus.WAITING
+                    }
+                )
+                Log.d("sendMessage", "Message Object Sender Name: ${messageObject.senderName}")
+
+                val updates = hashMapOf(
+                    "/chats/$senderRoom/messages/$messageId" to messageObject,
+                    "/chats/$receiverRoom/messages/$messageId" to messageObject,
+                    "/user/$senderUid/lastMessageTimestamp" to timestamp
+                )
+
+                mDbRef.updateChildren(updates).addOnSuccessListener {
+                    messageBox.setText(getString(R.string.nothing))
+                }.addOnFailureListener {
+                    Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show()
                 }
-            )
-
-            val updates = hashMapOf<String, Any>(
-                "/chats/$senderRoom/messages/$messageId" to messageObject,
-                "/chats/$receiverRoom/messages/$messageId" to messageObject,
-                "/user/$senderUid/lastMessageTimestamp" to timestamp
-            )
-
-            mDbRef.updateChildren(updates).addOnSuccessListener {
-                messageBox.setText(getString(R.string.nothing))
-            }.addOnFailureListener {
-                Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(this, "Message cannot be blank", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getCurrentUserName(callback: (String?) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val uid = currentUser?.uid
+
+        if (uid != null) {
+            val mDbRef = TubongeDb.getDatabase().getReference()
+            mDbRef.child("user").child(uid)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val userName = snapshot.child("name").getValue(String::class.java)
+                        Log.d("getCurrentUserName", "User Name: $userName")
+                        callback(userName)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e(
+                            "getCurrentUserName",
+                            "Failed to fetch user name",
+                            error.toException()
+                        )
+                        callback(null)
+                    }
+                })
+        } else {
+            callback(null)
         }
     }
 
@@ -187,6 +222,12 @@ class ChatActivity : AppCompatActivity() {
         if (NetworkUtils.isNetworkAvailable(this)) {
             updateWaitingMessages()
         }
+        isInChat = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isInChat = false
     }
 
     private fun loadMessagesFromFirebase() {
@@ -205,7 +246,7 @@ class ChatActivity : AppCompatActivity() {
                             .format(Date(message?.timestamp ?: 0))
                         if (lastDate != messageDate) {
                             if (message?.timestamp != null) {
-                                messageList.add(Message(null, null, message.timestamp, true))
+                                messageList.add(Message(null, null, null, message.timestamp, true))
                                 lastDate = messageDate
                             }
                         }
@@ -271,7 +312,6 @@ class ChatActivity : AppCompatActivity() {
             })
     }
 
-    // Add a method to handle message deletion in ChatActivity
     fun deleteMessage(message: Message) {
         val currentTime = System.currentTimeMillis()
         val thirtyMinutesInMillis = 30 * 60 * 1000
@@ -301,5 +341,10 @@ class ChatActivity : AppCompatActivity() {
             messageList.remove(message)
             messageAdapter.notifyDataSetChanged()
         }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 }
