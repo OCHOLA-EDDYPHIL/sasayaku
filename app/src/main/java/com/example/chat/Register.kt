@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -23,6 +24,17 @@ class Register : AppCompatActivity() {
     private lateinit var btnLogin: TextView
     private lateinit var auth: FirebaseAuth
 
+    companion object {
+        const val ERROR_NAME_REQUIRED = "Name is required"
+        const val ERROR_EMAIL_REQUIRED = "Email is required"
+        const val ERROR_PASSWORD_REQUIRED = "Password is required"
+        const val ERROR_NO_INTERNET = "No internet connection."
+        const val ERROR_EMAIL_REGISTERED = "This email is already registered."
+        const val ERROR_WEAK_PASSWORD = "Password is too weak."
+        const val ERROR_INVALID_EMAIL = "Invalid email format."
+        const val ERROR_GENERIC = "Some error occurred: "
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -32,12 +44,19 @@ class Register : AppCompatActivity() {
 
         auth = TubongeDb.getAuth()
 
+        initViews()
+        setListeners()
+    }
+
+    private fun initViews() {
         edtName = findViewById(R.id.edt_name)
         edtEmail = findViewById(R.id.edt_email)
         edtPassword = findViewById(R.id.edt_password)
         btnRegister = findViewById(R.id.btnRegister)
         btnLogin = findViewById(R.id.btnLogin)
+    }
 
+    private fun setListeners() {
         btnRegister.setOnClickListener {
             val name = edtName.text.toString()
             val email = edtEmail.text.toString()
@@ -60,24 +79,29 @@ class Register : AppCompatActivity() {
     }
 
     private fun validateInput(name: String, email: String, password: String): Boolean {
-        if (name.isEmpty()) {
-            edtName.error = "Name is required"
-            return false
+        return when {
+            name.isEmpty() -> {
+                edtName.error = ERROR_NAME_REQUIRED
+                false
+            }
+
+            email.isEmpty() -> {
+                edtEmail.error = ERROR_EMAIL_REQUIRED
+                false
+            }
+
+            password.isEmpty() -> {
+                edtPassword.error = ERROR_PASSWORD_REQUIRED
+                false
+            }
+
+            else -> true
         }
-        if (email.isEmpty()) {
-            edtEmail.error = "Email is required"
-            return false
-        }
-        if (password.isEmpty()) {
-            edtPassword.error = "Password is required"
-            return false
-        }
-        return true
     }
 
     private fun register(name: String, email: String, password: String) {
-        if (!NetworkUtils.isNetworkAvailable(this)) {
-            AlertUtils.showAlert(this, "Registration Failed", "No internet connection.")
+        if (!isNetworkAvailable()) {
+            showAlert(ERROR_NO_INTERNET)
             return
         }
 
@@ -85,49 +109,40 @@ class Register : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     addUserToDatabase(name, email, auth.currentUser?.uid!!)
-                    val intent = Intent(this@Register, MainActivity::class.java)
-                    finish()
-                    startActivity(intent)
+                    navigateToMainActivity()
                 } else {
-                    when (val exception = task.exception) {
-                        is FirebaseAuthUserCollisionException -> {
-                            AlertUtils.showAlert(
-                                this,
-                                "Registration Failed",
-                                "This email is already registered."
-                            )
-                        }
-
-                        is FirebaseAuthWeakPasswordException -> {
-                            AlertUtils.showAlert(
-                                this,
-                                "Registration Failed",
-                                "Password is too weak."
-                            )
-                        }
-
-                        is FirebaseAuthInvalidCredentialsException -> {
-                            AlertUtils.showAlert(
-                                this,
-                                "Registration Failed",
-                                "Invalid email format."
-                            )
-                        }
-
-                        else -> {
-                            AlertUtils.showAlert(
-                                this,
-                                "Registration Failed",
-                                "Some error occurred: ${exception?.message}"
-                            )
-                        }
-                    }
+                    handleRegistrationError(task.exception)
                 }
             }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        return NetworkUtils.isNetworkAvailable(this)
+    }
+
+    private fun showAlert(message: String) {
+        AlertUtils.showAlert(this, "Registration Failed", message)
+    }
+
+    private fun handleRegistrationError(exception: Exception?) {
+        when (exception) {
+            is FirebaseAuthUserCollisionException -> showAlert(ERROR_EMAIL_REGISTERED)
+            is FirebaseAuthWeakPasswordException -> showAlert(ERROR_WEAK_PASSWORD)
+            is FirebaseAuthInvalidCredentialsException -> showAlert(ERROR_INVALID_EMAIL)
+            else -> showAlert(ERROR_GENERIC + (exception?.message ?: ""))
+        }
     }
 
     private fun addUserToDatabase(name: String, email: String, uid: String) {
         val mDbRef = TubongeDb.getDatabase().getReference()
         mDbRef.child("user").child(uid).setValue(User(name, email, uid, null))
+    }
+
+    private fun navigateToMainActivity() {
+        val intent = Intent(this@Register, MainActivity::class.java)
+        finish()
+        startActivity(intent)
+        // make a toast to welcome the user
+        Toast.makeText(this, "Registration successful.", Toast.LENGTH_SHORT).show()
     }
 }
