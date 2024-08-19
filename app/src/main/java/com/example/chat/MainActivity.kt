@@ -244,36 +244,45 @@ class MainActivity : AppCompatActivity() {
 
     private val messageCountMap = mutableMapOf<String, Int>()
 
+    private val processedMessageIds = mutableSetOf<String>()
+
     private fun triggerNotification(message: Message) {
         val senderId = message.senderId ?: return
         val senderName = message.senderName
+        val messageId = message.id ?: return
+
+        // Skip processing if this message has already been handled
+        if (processedMessageIds.contains(messageId)) {
+            return
+        }
+
+        // Mark this message as processed
+        processedMessageIds.add(messageId)
 
         // Increment the message count for the sender
-        val messageCount = messageCountMap.getOrDefault(senderId, 0) + 1
-        messageCountMap[senderId] = messageCount
+        val currentCount = messageCountMap.getOrDefault(senderId, 0) + 1
+        messageCountMap[senderId] = currentCount
 
         val intent = Intent(this, ChatActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra("uid", senderId)
             putExtra("name", senderName)
         }
-        Log.d("MainActivity", "Intent created with senderName: $senderName")
 
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
-        Log.d("MainActivity", "PendingIntent created: $pendingIntent")
 
-        val notificationContent = if (messageCount > 1) {
-            "You have $messageCount new messages from $senderName"
+        val notificationContent = if (currentCount > 1) {
+            "You have $currentCount new messages from $senderName"
         } else {
             message.message
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, "chat_notifications")
             .setSmallIcon(R.drawable.message_foreground)
-            .setContentTitle("$senderName")
+            .setContentTitle(senderName)
             .setContentText(notificationContent)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
