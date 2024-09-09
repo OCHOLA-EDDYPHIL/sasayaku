@@ -1,4 +1,4 @@
-# Chat Application
+# Tubonge Chat Application
 
 ## Project Details
 
